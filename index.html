@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canva Mail Checker</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Prompt', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: 'var(--theme-color, #4F46E5)', // Dynamic theme color
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Prompt', sans-serif; background-color: var(--bg-color, #e0f2fe); background-image: var(--bg-image, none); background-size: cover; background-position: center; background-attachment: fixed;}
+        .view-section { display: none !important; }
+        .view-section.active { display: flex !important; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+        
+        /* Modal Backdrop */
+        .modal-active { overflow: hidden; }
+
+        /* Animated Waves and Bubbles */
+        .wave-container { position: fixed; bottom: 0; left: 0; width: 100%; height: 35vh; min-height: 200px; z-index: -1; pointer-events: none; }
+        .waves { position: absolute; bottom: 0; width: 100%; height: 100%; }
+        .parallax > use { animation: move-forever 25s cubic-bezier(.55,.5,.45,.5) infinite; fill: var(--theme-color, #00a2ff); }
+        .parallax > use:nth-child(1) { animation-delay: -2s; animation-duration: 7s; opacity: 0.05; }
+        .parallax > use:nth-child(2) { animation-delay: -3s; animation-duration: 10s; opacity: 0.15; }
+        .parallax > use:nth-child(3) { animation-delay: -4s; animation-duration: 13s; opacity: 0.25; }
+        .parallax > use:nth-child(4) { animation-delay: -5s; animation-duration: 20s; opacity: 0.4; }
+        @keyframes move-forever { 0% { transform: translate3d(-90px, 0, 0); } 100% { transform: translate3d(85px, 0, 0); } }
+        
+        .bubbles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; pointer-events: none; margin: 0; padding: 0; overflow: hidden; }
+        .bubbles li { position: absolute; list-style: none; display: block; width: 20px; height: 20px; background: rgba(255, 255, 255, 0.4); border: 1px solid rgba(255, 255, 255, 0.6); animation: float-up 25s linear infinite; bottom: -150px; border-radius: 50%; box-shadow: 0 0 10px rgba(255,255,255,0.2); }
+        .bubbles li:nth-child(1) { left: 25%; width: 40px; height: 40px; animation-delay: 0s; }
+        .bubbles li:nth-child(2) { left: 10%; width: 20px; height: 20px; animation-delay: 2s; animation-duration: 12s; }
+        .bubbles li:nth-child(3) { left: 70%; width: 20px; height: 20px; animation-delay: 4s; }
+        .bubbles li:nth-child(4) { left: 40%; width: 60px; height: 60px; animation-delay: 0s; animation-duration: 18s; }
+        .bubbles li:nth-child(5) { left: 65%; width: 20px; height: 20px; animation-delay: 0s; }
+        .bubbles li:nth-child(6) { left: 75%; width: 50px; height: 50px; animation-delay: 3s; }
+        .bubbles li:nth-child(7) { left: 35%; width: 70px; height: 70px; animation-delay: 7s; }
+        .bubbles li:nth-child(8) { left: 50%; width: 25px; height: 25px; animation-delay: 15s; animation-duration: 45s; }
+        .bubbles li:nth-child(9) { left: 20%; width: 15px; height: 15px; animation-delay: 2s; animation-duration: 35s; }
+        .bubbles li:nth-child(10){ left: 85%; width: 70px; height: 70px; animation-delay: 0s; animation-duration: 11s; }
+        @keyframes float-up { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(-1000px) rotate(720deg); opacity: 0; } }
+        
+        /* Floating Hearts */
+        .hearts { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; pointer-events: none; margin: 0; padding: 0; overflow: hidden; }
+        .hearts li { position: absolute; list-style: none; display: block; animation: float-heart 20s linear infinite; bottom: -150px; color: rgba(255, 255, 255, 0.3); filter: drop-shadow(0 0 5px rgba(255,255,255,0.4)); }
+        .hearts li:nth-child(even) { color: var(--theme-color, #00a2ff); opacity: 0.5; filter: drop-shadow(0 0 8px var(--theme-color, #00a2ff)); }
+        .hearts li:nth-child(1) { left: 15%; font-size: 30px; animation-delay: 0s; }
+        .hearts li:nth-child(2) { left: 25%; font-size: 20px; animation-delay: 4s; animation-duration: 15s; }
+        .hearts li:nth-child(3) { left: 45%; font-size: 40px; animation-delay: 2s; animation-duration: 25s; }
+        .hearts li:nth-child(4) { left: 65%; font-size: 25px; animation-delay: 6s; animation-duration: 18s; }
+        .hearts li:nth-child(5) { left: 80%; font-size: 35px; animation-delay: 3s; animation-duration: 22s; }
+        .hearts li:nth-child(6) { left: 90%; font-size: 15px; animation-delay: 8s; animation-duration: 12s; }
+        .hearts li:nth-child(7) { left: 5%;  font-size: 45px; animation-delay: 10s; animation-duration: 28s; }
+        .hearts li:nth-child(8) { left: 55%; font-size: 20px; animation-delay: 15s; animation-duration: 20s; }
+        
+        @keyframes float-heart {
+            0% { transform: translateY(0) scale(0.8) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            50% { transform: translateY(-500px) scale(1.2) rotate(20deg); }
+            90% { opacity: 1; }
+            100% { transform: translateY(-1200px) scale(0.8) rotate(-20deg); opacity: 0; }
+        }
+
+        /* เอฟเฟกต์ก้อนเมฆ (Clouds) */
+        .clouds-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -3; pointer-events: none; overflow: hidden; }
+        .cloud { position: absolute; background: rgba(255, 255, 255, 0.6); border-radius: 50px; animation: float-cloud linear infinite; filter: drop-shadow(0 5px 15px rgba(255,255,255,0.4)); left: -300px; }
+        .cloud::before, .cloud::after { content: ''; position: absolute; background: inherit; border-radius: 50%; }
+        
+        .c1 { width: 180px; height: 60px; top: 15%; animation-duration: 50s; }
+        .c1::before { width: 80px; height: 80px; top: -35px; left: 25px; }
+        .c1::after { width: 100px; height: 100px; top: -50px; right: 25px; }
+
+        .c2 { width: 120px; height: 40px; top: 40%; animation-duration: 70s; opacity: 0.5; animation-delay: -25s; transform: scale(0.8); }
+        .c2::before { width: 60px; height: 60px; top: -25px; left: 15px; }
+        .c2::after { width: 70px; height: 70px; top: -35px; right: 15px; }
+
+        .c3 { width: 250px; height: 80px; top: 65%; animation-duration: 90s; opacity: 0.3; animation-delay: -45s; transform: scale(1.2); }
+        .c3::before { width: 110px; height: 110px; top: -50px; left: 40px; }
+        .c3::after { width: 140px; height: 140px; top: -70px; right: 40px; }
+
+        .c4 { width: 150px; height: 50px; top: 8%; animation-duration: 60s; opacity: 0.7; animation-delay: -10s; }
+        .c4::before { width: 70px; height: 70px; top: -30px; left: 20px; }
+        .c4::after { width: 80px; height: 80px; top: -40px; right: 20px; }
+
+        @keyframes float-cloud {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(calc(100vw + 300px)); }
+        }
+
+        /* เอฟเฟกต์ไฟกระพริบแบบเข้มข้น (Intense Ping Status) */
+        .status-dot-container { position: relative; display: flex; height: 14px; width: 14px; margin-right: 10px; }
+        .status-ping-1, .status-ping-2 { position: absolute; display: inline-flex; height: 100%; width: 100%; border-radius: 50%; opacity: 0.9; }
+        .status-ping-1 { animation: custom-ping 1.5s ease-out infinite; }
+        .status-ping-2 { animation: custom-ping 1.5s ease-out infinite; animation-delay: 0.5s; }
+        .status-dot { position: relative; display: inline-flex; border-radius: 50%; height: 14px; width: 14px; z-index: 10; border: 2px solid rgba(255,255,255,0.8); box-sizing: border-box; }
+        
+        @keyframes custom-ping {
+            0% { transform: scale(1); opacity: 0.9; }
+            70% { transform: scale(3.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 0; }
+        }
+    </style>
+</head>
+<body class="text-gray-800 antialiased min-h-screen flex flex-col transition-colors duration-300">
+
+    <!-- เอฟเฟกต์ฟองอากาศ -->
+    <ul class="bubbles">
+        <li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li>
+    </ul>
+
+    <!-- เอฟเฟกต์หัวใจลอย -->
+    <ul class="hearts">
+        <li><i class="fas fa-heart"></i></li>
+        <li><i class="fas fa-heart"></i></li>
+        <li><i class="fas fa-heart"></i></li>
+        <li><i class="fas fa-heart"></i></li>
+        <li><i class="fas fa-heart"></i></li>
+        <li><i class="fas fa-heart"></i></li>
+        <li><i class="fas fa-heart"></i></li>
+        <li><i class="fas fa-heart"></i></li>
+    </ul>
+
+    <!-- เอฟเฟกต์ก้อนเมฆ -->
+    <div class="clouds-container">
+        <div class="cloud c1"></div>
+        <div class="cloud c2"></div>
+        <div class="cloud c3"></div>
+        <div class="cloud c4"></div>
+    </div>
+
+    <!-- เอฟเฟกต์คลื่นน้ำ -->
+    <div class="wave-container">
+        <svg class="waves" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 24 150 28" preserveAspectRatio="none" shape-rendering="auto">
+            <defs>
+                <path id="gentle-wave" d="M-160 44c30 0 58-18 88-18s 58 18 88 18 58-18 88-18 58 18 88 18 v44h-352z" />
+            </defs>
+            <g class="parallax">
+                <use xlink:href="#gentle-wave" x="48" y="0" />
+                <use xlink:href="#gentle-wave" x="48" y="3" />
+                <use xlink:href="#gentle-wave" x="48" y="5" />
+                <use xlink:href="#gentle-wave" x="48" y="7" />
+            </g>
+        </svg>
+    </div>
+
+    <div id="view-customer" class="view-section active flex-grow flex flex-col items-center py-10 px-4">
+        <div class="absolute top-4 right-4">
+            <button onclick="switchView('view-admin-login')" class="bg-gray-800 text-white px-4 py-2 rounded-lg shadow hover:bg-gray-700 transition text-sm">
+                <i class="fas fa-lock mr-2"></i> เข้าสู่ระบบแอดมิน
+            </button>
+        </div>
+
+        <div class="w-full max-w-2xl bg-white/95 backdrop-blur rounded-2xl shadow-xl p-8 mt-10">
+            <div class="text-center mb-8">
+                <img id="customer-logo" src="https://placehold.co/150x150/00a2ff/white?text=LOGO" alt="Logo" class="w-24 h-24 mx-auto rounded-full object-cover shadow-md mb-4 border-4 border-white">
+                <h1 id="customer-site-name" class="text-3xl font-bold text-gray-800">ระบบตรวจสอบเมล Canva</h1>
+                <p class="text-gray-500 mt-2">กรอกอีเมล หรือ รหัสเมล (เช่น NN001) เพื่อตรวจสอบสถานะ</p>
+            </div>
+
+            <div class="flex flex-col md:flex-row gap-3">
+                <input type="text" id="search-input" onkeypress="handleSearchKeyPress(event)" placeholder="กรอกอีเมล หรือ รหัสเมล..." class="flex-grow px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent text-lg">
+                <button onclick="searchCustomerEmail()" class="bg-brand text-white px-6 py-3 rounded-lg shadow-lg hover:opacity-90 transition font-medium text-lg whitespace-nowrap">
+                    <i class="fas fa-search mr-2"></i> ค้นหา
+                </button>
+            </div>
+
+            <!-- ส่วนแสดงผลแบบการ์ด -->
+            <div id="search-result-container" class="mt-10 hidden w-full text-left">
+                <div class="flex items-center justify-between border-b border-gray-200 pb-3 mb-6">
+                    <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                        <i class="fas fa-clipboard-check text-brand"></i> ข้อมูลแพ็คเกจของคุณ
+                    </h3>
+                </div>
+                
+                <div id="search-result-body" class="space-y-6">
+                    <!-- Results injected here as Cards -->
+                </div>
+            </div>
+
+            <div id="search-not-found" class="mt-8 hidden text-center text-red-500 py-6 bg-red-50 rounded-xl border border-red-100">
+                <i class="fas fa-search-minus text-4xl mb-3 text-red-400"></i>
+                <h3 class="text-lg font-bold">ไม่พบข้อมูลในระบบ</h3>
+                <p class="text-sm mt-1 text-red-400">โปรดตรวจสอบอีเมลหรือรหัสเมลให้ถูกต้องอีกครั้ง</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-admin-login" class="view-section min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-900/50 backdrop-blur-sm fixed inset-0 z-50">
+        <div class="max-w-md w-full bg-white rounded-xl shadow-2xl p-8 space-y-8 relative">
+            <button onclick="switchView('view-customer')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+            <div>
+                <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">Admin Login</h2>
+            </div>
+            <form class="mt-8 space-y-6" onsubmit="event.preventDefault(); adminLogin();">
+                <div class="rounded-md shadow-sm -space-y-px">
+                    <div>
+                        <label for="admin-email" class="sr-only">Email address</label>
+                        <input id="admin-email" name="email" type="email" required class="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-brand focus:border-brand sm:text-sm" placeholder="อีเมลแอดมิน">
+                    </div>
+                    <div>
+                        <label for="admin-password" class="sr-only">Password</label>
+                        <input id="admin-password" name="password" type="password" required class="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-brand focus:border-brand sm:text-sm" placeholder="รหัสผ่าน">
+                    </div>
+                </div>
+                <div id="login-error" class="text-red-500 text-sm text-center hidden">อีเมลหรือรหัสผ่านไม่ถูกต้อง</div>
+                <div>
+                    <button type="submit" class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-brand hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand shadow-lg">
+                        เข้าสู่ระบบ
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="view-admin-dashboard" class="view-section min-h-screen bg-gray-100 hidden flex-col md:flex-row relative z-10">
+        <!-- Sidebar -->
+        <div class="w-full md:w-64 bg-gray-800 text-white flex flex-col md:min-h-screen shadow-lg">
+            <div class="p-4 flex items-center justify-between md:justify-center border-b border-gray-700">
+                <div class="flex items-center gap-3">
+                    <img id="admin-sidebar-logo" src="" alt="Logo" class="w-10 h-10 rounded-full object-cover bg-white">
+                    <span class="font-bold text-xl truncate" id="admin-sidebar-name">Admin Panel</span>
+                </div>
+                <button class="md:hidden text-gray-300 hover:text-white" onclick="toggleSidebarMenu()">
+                    <i class="fas fa-bars text-2xl"></i>
+                </button>
+            </div>
+            
+            <nav id="sidebar-menu" class="hidden md:flex flex-col p-4 gap-2 flex-grow">
+                <button onclick="switchAdminTab('tab-dashboard')" class="admin-tab-btn w-full text-left px-4 py-3 rounded-lg hover:bg-gray-700 transition flex items-center bg-brand" data-target="tab-dashboard">
+                    <i class="fas fa-chart-pie w-6"></i> ภาพรวม (Dashboard)
+                </button>
+                <button onclick="switchAdminTab('tab-emails')" class="admin-tab-btn w-full text-left px-4 py-3 rounded-lg hover:bg-gray-700 transition flex items-center" data-target="tab-emails">
+                    <i class="fas fa-envelope w-6"></i> จัดการข้อมูลเมล
+                </button>
+                <button onclick="switchAdminTab('tab-packages')" class="admin-tab-btn w-full text-left px-4 py-3 rounded-lg hover:bg-gray-700 transition flex items-center" data-target="tab-packages">
+                    <i class="fas fa-box w-6"></i> จัดการแพ็คเกจ
+                </button>
+                <button onclick="switchAdminTab('tab-channels')" class="admin-tab-btn w-full text-left px-4 py-3 rounded-lg hover:bg-gray-700 transition flex items-center" data-target="tab-channels">
+                    <i class="fas fa-comments w-6"></i> ช่องทางติดต่อ
+                </button>
+                <button onclick="switchAdminTab('tab-settings')" class="admin-tab-btn w-full text-left px-4 py-3 rounded-lg hover:bg-gray-700 transition flex items-center" data-target="tab-settings">
+                    <i class="fas fa-cog w-6"></i> ตั้งค่าเว็บไซต์
+                </button>
+            </nav>
+            <div class="p-4 border-t border-gray-700 hidden md:block" id="sidebar-footer">
+                <button onclick="adminLogout()" class="w-full text-left px-4 py-2 rounded-lg text-red-400 hover:bg-gray-700 hover:text-red-300 transition flex items-center">
+                    <i class="fas fa-sign-out-alt w-6"></i> ออกจากระบบ
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-grow p-4 md:p-8 overflow-y-auto">
+            
+            <div id="tab-dashboard" class="admin-tab-content active space-y-6">
+                <h2 class="text-2xl font-bold text-gray-800">ภาพรวมระบบ (Dashboard)</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- Stat Card 1 -->
+                    <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-blue-500">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="text-sm text-gray-500 uppercase tracking-wide font-semibold">เมลทั้งหมด</p>
+                                <h3 class="text-3xl font-bold text-gray-800 mt-1" id="stat-total">0</h3>
+                            </div>
+                            <div class="p-3 bg-blue-100 rounded-full text-blue-600">
+                                <i class="fas fa-users text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Stat Card 2 -->
+                    <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-green-500">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="text-sm text-gray-500 uppercase tracking-wide font-semibold">กำลังใช้งาน</p>
+                                <h3 class="text-3xl font-bold text-gray-800 mt-1" id="stat-active">0</h3>
+                            </div>
+                            <div class="p-3 bg-green-100 rounded-full text-green-600">
+                                <i class="fas fa-check-circle text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Stat Card 3 -->
+                    <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-yellow-500">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="text-sm text-gray-500 uppercase tracking-wide font-semibold">กำลังหมดอายุ (1-3 วัน)</p>
+                                <h3 class="text-3xl font-bold text-gray-800 mt-1" id="stat-warning">0</h3>
+                            </div>
+                            <div class="p-3 bg-yellow-100 rounded-full text-yellow-600">
+                                <i class="fas fa-exclamation-triangle text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Stat Card 4 -->
+                    <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-red-500">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="text-sm text-gray-500 uppercase tracking-wide font-semibold">หมดอายุแล้ว</p>
+                                <h3 class="text-3xl font-bold text-gray-800 mt-1" id="stat-expired">0</h3>
+                            </div>
+                            <div class="p-3 bg-red-100 rounded-full text-red-600">
+                                <i class="fas fa-times-circle text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-emails" class="admin-tab-content hidden space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <h2 class="text-2xl font-bold text-gray-800">จัดการข้อมูลเมลลูกค้า</h2>
+                    <button onclick="openEmailModal()" class="bg-brand text-white px-4 py-2 rounded-lg shadow hover:opacity-90 transition">
+                        <i class="fas fa-plus mr-2"></i> เพิ่มข้อมูลเมล
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ลำดับ</th>
+                                    <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">รหัสเมล</th>
+                                    <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">แพ็คเกจ</th>
+                                    <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">เมล</th>
+                                    <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">เริ่มใช้งาน</th>
+                                    <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">หมดอายุ</th>
+                                    <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">เหลือกี่วัน</th>
+                                    <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ช่องทางติดต่อ</th>
+                                    <th class="py-3 px-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-email-table-body" class="bg-white divide-y divide-gray-200 text-sm">
+                                <!-- Data rendered by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-packages" class="admin-tab-content hidden space-y-6">
+                <h2 class="text-2xl font-bold text-gray-800">จัดการหมวดหมู่ / แพ็คเกจ</h2>
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                    <form onsubmit="event.preventDefault(); addPackage();" class="flex gap-3 mb-6">
+                        <input type="text" id="new-package-name" placeholder="ชื่อแพ็คเกจใหม่..." required class="flex-grow px-4 py-2 border border-gray-300 rounded-lg focus:ring-brand focus:border-brand">
+                        <button type="submit" class="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition whitespace-nowrap">เพิ่มแพ็คเกจ</button>
+                    </form>
+                    <ul id="package-list" class="divide-y divide-gray-200 border-t">
+                        <!-- Packages loaded here -->
+                    </ul>
+                </div>
+            </div>
+
+            <div id="tab-channels" class="admin-tab-content hidden space-y-6">
+                <h2 class="text-2xl font-bold text-gray-800">จัดการช่องทางติดต่อ</h2>
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                    <form onsubmit="event.preventDefault(); addChannel();" class="flex gap-3 mb-6">
+                        <input type="text" id="new-channel-name" placeholder="เช่น LINE, Facebook, IG..." required class="flex-grow px-4 py-2 border border-gray-300 rounded-lg focus:ring-brand focus:border-brand">
+                        <button type="submit" class="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition whitespace-nowrap">เพิ่มช่องทาง</button>
+                    </form>
+                    <ul id="channel-list" class="divide-y divide-gray-200 border-t">
+                        <!-- Channels loaded here -->
+                    </ul>
+                </div>
+            </div>
+
+            <div id="tab-settings" class="admin-tab-content hidden space-y-6">
+                <h2 class="text-2xl font-bold text-gray-800">การตั้งค่าเว็บไซต์</h2>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- General Settings -->
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200 space-y-4">
+                        <h3 class="text-lg font-semibold border-b pb-2">ตั้งค่าทั่วไป</h3>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">ชื่อเว็บไซต์</label>
+                            <input type="text" id="setting-sitename" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-brand focus:border-brand">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">โทนสีหลัก (Hex Color)</label>
+                            <div class="flex gap-2">
+                                <input type="color" id="setting-color-picker" class="h-10 w-10 p-1 border border-gray-300 rounded cursor-pointer">
+                                <input type="text" id="setting-color-text" class="flex-grow px-4 py-2 border border-gray-300 rounded-lg focus:ring-brand focus:border-brand">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">โลโก้เว็บไซต์ (เลือกรูปภาพประเภท PNG เพื่อคงความโปร่งใส)</label>
+                            <input type="file" id="setting-logo-file" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-brand file:text-white hover:file:opacity-90">
+                            <div class="mt-2 flex items-center gap-4">
+                                <img id="preview-logo" src="" alt="Preview Logo" class="w-16 h-16 object-contain rounded shadow border bg-gray-50 hidden">
+                                <button onclick="clearLogo()" class="text-red-500 text-sm hover:underline hidden" id="btn-clear-logo">ลบโลโก้</button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">ภาพพื้นหลัง (เว้นว่างหากไม่ต้องการ)</label>
+                            <input type="file" id="setting-bg-file" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-800 file:text-white hover:file:opacity-90">
+                            <div class="mt-2 flex items-center gap-4">
+                                <img id="preview-bg" src="" alt="Preview BG" class="w-32 h-16 object-cover rounded shadow border bg-gray-50 hidden">
+                                <button onclick="clearBg()" class="text-red-500 text-sm hover:underline hidden" id="btn-clear-bg">ลบภาพพื้นหลัง</button>
+                            </div>
+                        </div>
+                        
+                        <button onclick="saveGeneralSettings()" class="w-full bg-brand text-white py-2 rounded-lg shadow hover:opacity-90 transition mt-4">บันทึกการตั้งค่าทั่วไป</button>
+                    </div>
+
+                    <!-- Admin Account Settings -->
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200 space-y-4">
+                        <h3 class="text-lg font-semibold border-b pb-2">บัญชีแอดมิน</h3>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">อีเมลแอดมิน</label>
+                            <input type="email" id="setting-admin-email" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-brand focus:border-brand">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">รหัสผ่านใหม่ (เว้นว่างหากไม่ต้องการเปลี่ยน)</label>
+                            <input type="password" id="setting-admin-pwd" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-brand focus:border-brand">
+                        </div>
+                        <button onclick="saveAdminSettings()" class="w-full bg-gray-800 text-white py-2 rounded-lg shadow hover:opacity-90 transition mt-4">อัปเดตบัญชีแอดมิน</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="email-modal" class="fixed inset-0 z-[100] hidden bg-gray-900/60 backdrop-blur-sm overflow-y-auto h-full w-full px-4 flex justify-center items-center">
+        <div class="relative w-full max-w-2xl bg-white rounded-xl shadow-2xl p-6 md:p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-800" id="modal-title">เพิ่มข้อมูลเมล</h3>
+                <button onclick="closeEmailModal()" class="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-xl"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="email-form" onsubmit="event.preventDefault(); saveEmailData();">
+                <input type="hidden" id="form-mode" value="add">
+                <input type="hidden" id="form-original-id" value="">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <!-- Channel & Detail (Dynamic) -->
+                    <div class="md:col-span-2 mb-2 bg-gray-50 p-4 rounded-lg border border-gray-100">
+                        <div class="flex justify-between items-center mb-3">
+                            <label class="block text-sm font-medium text-gray-700">ช่องทางการติดต่อ (เพิ่มได้มากกว่า 1)</label>
+                            <button type="button" onclick="addContactField()" class="text-xs bg-brand text-white px-3 py-1.5 rounded-lg shadow hover:opacity-90 transition flex items-center cursor-pointer">
+                                <i class="fas fa-plus mr-1"></i> เพิ่มช่องทาง
+                            </button>
+                        </div>
+                        <div id="contacts-container" class="space-y-3">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Email & Code -->
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">อีเมลลูกค้า</label>
+                        <input type="email" id="form-email" required placeholder="customer@example.com" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-brand focus:border-brand">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">รหัสเมล (สร้างอัตโนมัติ)</label>
+                        <input type="text" id="form-code" readonly class="w-full px-4 py-2 border border-gray-300 bg-gray-100 rounded-lg text-gray-600 font-semibold cursor-not-allowed">
+                        <p class="text-xs text-gray-500 mt-1">ระบบจะรันเลขต่อไปให้โดยอัตโนมัติ</p>
+                    </div>
+
+                    <!-- Package -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">แพ็คเกจ</label>
+                        <select id="form-package" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-brand focus:border-brand">
+                            <!-- Populated via JS -->
+                        </select>
+                    </div>
+
+                    <!-- Dates -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">วันที่เริ่มใช้งาน</label>
+                        <input type="date" id="form-start-date" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-brand focus:border-brand">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">วันที่หมดอายุ</label>
+                        <input type="date" id="form-expire-date" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-brand focus:border-brand">
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 mt-8 pt-4 border-t border-gray-200">
+                    <button type="button" onclick="closeEmailModal()" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition cursor-pointer">ยกเลิก</button>
+                    <button type="submit" class="px-6 py-2 bg-brand text-white rounded-lg shadow hover:opacity-90 transition cursor-pointer">บันทึกข้อมูล</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-[9999] flex flex-col gap-3 pointer-events-none"></div>
+
+    <script>
+        // --- State Management ---
+        const MOCK_LOGO = "https://placehold.co/150x150/00a2ff/ffffff?text=Logo";
+        
+        let appData = {
+            settings: {
+                siteName: "NONNON STORE",
+                themeColor: "#00a2ff",
+                logoDataUrl: MOCK_LOGO,
+                bgDataUrl: "",
+                adminEmail: "admin@canva.com",
+                adminPassword: "admin"
+            },
+            packages: ["Canva Pro 1 เดือน", "Canva Pro 1 ปี", "Canva Edu ตลอดชีพ"],
+            channels: ["LINE", "Facebook", "Instagram", "เบอร์โทรศัพท์"],
+            emails: [
+                { id: "NN001", email: "user1@gmail.com", package: "Canva Pro 1 ปี", startDate: "2023-01-01", expireDate: "2026-12-31", contacts: [{ channel: "LINE", detail: "@user1" }] },
+                { id: "NN002", email: "user2@hotmail.com", package: "Canva Pro 1 เดือน", startDate: "2023-10-01", expireDate: getRelativeDate(2), contacts: [{ channel: "Facebook", detail: "User Two" }, { channel: "เบอร์โทรศัพท์", detail: "089-123-4567" }] },
+                { id: "NN003", email: "user3@yahoo.com", package: "Canva Edu ตลอดชีพ", startDate: "2023-09-01", expireDate: getRelativeDate(-5), contacts: [{ channel: "Instagram", detail: "user_3" }] }
+            ]
+        };
+
+        // Helper to generate mock dates relative to today for demo purposes
+        function getRelativeDate(daysOffset) {
+            const date = new Date();
+            date.setDate(date.getDate() + daysOffset);
+            return date.toISOString().split('T')[0];
+        }
+
+        function loadData() {
+            const stored = localStorage.getItem('canvaAppDB');
+            if (stored) {
+                appData = JSON.parse(stored);
+                
+                // Migration: Convert old single channel/detail to new contacts array structure
+                let dataModified = false;
+                appData.emails.forEach(e => {
+                    if(!e.contacts) {
+                        e.contacts = [{ channel: e.channel || 'LINE', detail: e.detail || '-' }];
+                        delete e.channel;
+                        delete e.detail;
+                        dataModified = true;
+                    }
+                });
+
+                // Migration: บังคับอัปเดตสีและชื่อร้านให้ตรงกับ NONNON STORE หากยังเป็นค่าเริ่มต้นเดิมอยู่
+                if (appData.settings.themeColor === "#4F46E5" || appData.settings.themeColor === "#4f46e5") {
+                    appData.settings.themeColor = "#00a2ff";
+                    appData.settings.siteName = "NONNON STORE";
+                    dataModified = true;
+                }
+
+                if(dataModified) saveData();
+
+            } else {
+                saveData(); // Save defaults
+            }
+            applySettings();
+        }
+
+        function saveData() {
+            localStorage.setItem('canvaAppDB', JSON.stringify(appData));
+        }
+
+        // --- Core Utilities ---
+        function calculateDaysLeft(expireDateStr) {
+            const exp = new Date(expireDateStr);
+            const now = new Date();
+            exp.setHours(0,0,0,0);
+            now.setHours(0,0,0,0);
+            const diffTime = exp - now;
+            return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        }
+
+        function getStatusInfo(daysLeft) {
+            if (daysLeft < 0) return { text: "หมดอายุ", badgeClass: "bg-red-50 text-red-700 border-red-200", dot: "bg-red-500 shadow-[0_0_10px_#ef4444]", ping: "bg-red-500" };
+            if (daysLeft === 0) return { text: "หมดอายุวันนี้", badgeClass: "bg-red-50 text-red-700 border-red-200", dot: "bg-red-500 shadow-[0_0_10px_#ef4444]", ping: "bg-red-500" };
+            if (daysLeft <= 3) return { text: "ใกล้หมดอายุ", badgeClass: "bg-yellow-50 text-yellow-700 border-yellow-200", dot: "bg-yellow-500 shadow-[0_0_10px_#eab308]", ping: "bg-yellow-500" };
+            return { text: "กำลังใช้งาน", badgeClass: "bg-green-50 text-green-700 border-green-200", dot: "bg-green-500 shadow-[0_0_10px_#22c55e]", ping: "bg-green-500" };
+        }
+
+        function generateStatusBadge(daysLeft, extraText = "") {
+            const st = getStatusInfo(daysLeft);
+            return `
+                <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold border shadow-sm ${st.badgeClass} whitespace-nowrap">
+                    <span class="status-dot-container flex-shrink-0">
+                        <span class="status-ping-1 ${st.ping}"></span>
+                        <span class="status-ping-2 ${st.ping}"></span>
+                        <span class="status-dot ${st.dot}"></span>
+                    </span>
+                    ${st.text} <span class="ml-1 font-medium">${extraText}</span>
+                </span>
+            `;
+        }
+
+        function generateNextId() {
+            if (appData.emails.length === 0) return "NN001";
+            let maxNum = 0;
+            appData.emails.forEach(e => {
+                const num = parseInt(e.id.replace("NN", ""));
+                if (!isNaN(num) && num > maxNum) maxNum = num;
+            });
+            return "NN" + String(maxNum + 1).padStart(3, '0');
+        }
+
+        function showMessage(msg, type = 'success') {
+            // สร้าง container หากยังไม่มี
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.className = 'fixed top-5 right-5 z-[9999] flex flex-col gap-3 pointer-events-none';
+                document.body.appendChild(container);
+            }
+
+            // ตั้งค่าไอคอนและสีตามประเภท
+            const isSuccess = type === 'success';
+            const iconClass = isSuccess ? 'fas fa-check-circle text-green-500' : 'fas fa-exclamation-circle text-red-500';
+            const borderClass = isSuccess ? 'border-green-500' : 'border-red-500';
+
+            // สร้าง Element สำหรับ Toast
+            const toast = document.createElement('div');
+            toast.className = `flex items-center gap-4 min-w-[280px] max-w-sm px-5 py-4 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-l-4 ${borderClass} bg-white transform transition-all duration-500 translate-x-[120%] opacity-0 pointer-events-auto`;
+            
+            toast.innerHTML = `
+                <div class="flex-shrink-0 text-3xl drop-shadow-sm">
+                    <i class="${iconClass}"></i>
+                </div>
+                <div class="flex-grow font-semibold text-gray-700 text-sm">
+                    ${msg}
+                </div>
+                <button onclick="this.parentElement.classList.remove('translate-x-0', 'opacity-100'); this.parentElement.classList.add('translate-x-[120%]', 'opacity-0'); setTimeout(() => this.parentElement.remove(), 500);" class="flex-shrink-0 text-gray-400 hover:text-gray-600 transition ml-2 outline-none cursor-pointer">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+
+            container.appendChild(toast);
+
+            // Animate แสดง Toast (Slide in)
+            requestAnimationFrame(() => {
+                setTimeout(() => {
+                    toast.classList.remove('translate-x-[120%]', 'opacity-0');
+                    toast.classList.add('translate-x-0', 'opacity-100');
+                }, 10);
+            });
+
+            // Animate ซ่อนและลบ Toast (Slide out) หลังจาก 3 วินาที
+            setTimeout(() => {
+                // เช็คว่ายังมี Element อยู่หรือไม่ (เผื่อโดนผู้ใช้กดปิดไปก่อน)
+                if (toast.parentElement) {
+                    toast.classList.remove('translate-x-0', 'opacity-100');
+                    toast.classList.add('translate-x-[120%]', 'opacity-0');
+                    setTimeout(() => {
+                        if (toast.parentElement) toast.remove();
+                    }, 500); // รอจนกว่า Transition (Slide out) จะเสร็จสิ้นแล้วค่อยลบออกจาก DOM
+                }
+            }, 3000);
+        }
+
+        // --- UI View Switching ---
+        function switchView(viewId) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            
+            if(viewId === 'view-admin-dashboard') {
+                refreshAdminDashboard();
+                switchAdminTab('tab-dashboard');
+            }
+        }
+
+        // --- Image Compression (Canvas) - Updated to use WebP for transparency ---
+        function compressImage(file, callback) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 800; // max size for logo/bg
+                    const MAX_HEIGHT = 800;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    // เปลี่ยนจาก image/jpeg เป็น image/webp เพื่อรักษาพื้นหลังแบบโปร่งใส (Transparency) ของ PNG 
+                    const dataUrl = canvas.toDataURL('image/webp', 0.8); 
+                    callback(dataUrl);
+                }
+                img.src = event.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+
+        function applySettings() {
+            // Apply variables
+            document.documentElement.style.setProperty('--theme-color', appData.settings.themeColor);
+            
+            if (appData.settings.bgDataUrl) {
+                document.documentElement.style.setProperty('--bg-image', `url(${appData.settings.bgDataUrl})`);
+            } else {
+                document.documentElement.style.setProperty('--bg-image', 'none');
+            }
+
+            // Customer View Update
+            document.getElementById('customer-site-name').innerText = appData.settings.siteName;
+            document.getElementById('customer-logo').src = appData.settings.logoDataUrl || MOCK_LOGO;
+            
+            // Admin Sidebar Update
+            document.getElementById('admin-sidebar-name').innerText = appData.settings.siteName;
+            document.getElementById('admin-sidebar-logo').src = appData.settings.logoDataUrl || MOCK_LOGO;
+
+            // Populate Settings Form
+            document.getElementById('setting-sitename').value = appData.settings.siteName;
+            document.getElementById('setting-color-picker').value = appData.settings.themeColor;
+            document.getElementById('setting-color-text').value = appData.settings.themeColor;
+            document.getElementById('setting-admin-email').value = appData.settings.adminEmail;
+
+            // Logo preview
+            if(appData.settings.logoDataUrl) {
+                document.getElementById('preview-logo').src = appData.settings.logoDataUrl;
+                document.getElementById('preview-logo').classList.remove('hidden');
+                document.getElementById('btn-clear-logo').classList.remove('hidden');
+            }
+            // Bg preview
+            if(appData.settings.bgDataUrl) {
+                document.getElementById('preview-bg').src = appData.settings.bgDataUrl;
+                document.getElementById('preview-bg').classList.remove('hidden');
+                document.getElementById('btn-clear-bg').classList.remove('hidden');
+            }
+        }
+
+        // Sync color picker and text
+        document.getElementById('setting-color-picker').addEventListener('input', (e) => {
+            document.getElementById('setting-color-text').value = e.target.value;
+        });
+        document.getElementById('setting-color-text').addEventListener('input', (e) => {
+            document.getElementById('setting-color-picker').value = e.target.value;
+        });
+
+        // File uploads
+        document.getElementById('setting-logo-file').addEventListener('change', function(e) {
+            if(e.target.files && e.target.files[0]) {
+                compressImage(e.target.files[0], (compressedUrl) => {
+                    appData.settings.logoDataUrl = compressedUrl;
+                    applySettings();
+                    saveData();
+                    showMessage("อัปเดตโลโก้สำเร็จ");
+                });
+            }
+        });
+
+        document.getElementById('setting-bg-file').addEventListener('change', function(e) {
+            if(e.target.files && e.target.files[0]) {
+                compressImage(e.target.files[0], (compressedUrl) => {
+                    appData.settings.bgDataUrl = compressedUrl;
+                    applySettings();
+                    saveData();
+                    showMessage("อัปเดตภาพพื้นหลังสำเร็จ");
+                });
+            }
+        });
+
+        function clearLogo() {
+            appData.settings.logoDataUrl = MOCK_LOGO;
+            document.getElementById('setting-logo-file').value = "";
+            document.getElementById('preview-logo').classList.add('hidden');
+            document.getElementById('btn-clear-logo').classList.add('hidden');
+            applySettings(); saveData(); showMessage("ลบโลโก้สำเร็จ");
+        }
+        function clearBg() {
+            appData.settings.bgDataUrl = "";
+            document.getElementById('setting-bg-file').value = "";
+            document.getElementById('preview-bg').classList.add('hidden');
+            document.getElementById('btn-clear-bg').classList.add('hidden');
+            applySettings(); saveData(); showMessage("ลบภาพพื้นหลังสำเร็จ");
+        }
+
+        function saveGeneralSettings() {
+            appData.settings.siteName = document.getElementById('setting-sitename').value;
+            appData.settings.themeColor = document.getElementById('setting-color-picker').value;
+            applySettings();
+            saveData();
+            showMessage("บันทึกการตั้งค่าทั่วไปแล้ว");
+        }
+        
+        function saveAdminSettings() {
+            appData.settings.adminEmail = document.getElementById('setting-admin-email').value;
+            const newPwd = document.getElementById('setting-admin-pwd').value;
+            if(newPwd) {
+                appData.settings.adminPassword = newPwd;
+                document.getElementById('setting-admin-pwd').value = ""; // clear input
+            }
+            saveData();
+            showMessage("อัปเดตข้อมูลแอดมินแล้ว");
+        }
+
+        // ค้นหาเมื่อกดปุ่ม Enter
+        function handleSearchKeyPress(event) {
+            if (event.key === 'Enter') {
+                searchCustomerEmail();
+            }
+        }
+
+        // ค้นหาให้แสดงผลเป็นการ์ด
+        function searchCustomerEmail() {
+            const query = document.getElementById('search-input').value.trim().toLowerCase();
+            const resultContainer = document.getElementById('search-result-container');
+            const tbody = document.getElementById('search-result-body');
+            const notFound = document.getElementById('search-not-found');
+
+            if (!query) {
+                showMessage("กรุณากรอกอีเมล หรือ รหัสเมล", "error");
+                return;
+            }
+
+            // Find match by ID or Email
+            const matches = appData.emails.filter(e => 
+                e.id.toLowerCase() === query || e.email.toLowerCase() === query
+            );
+
+            tbody.innerHTML = '';
+            
+            if (matches.length > 0) {
+                matches.forEach(data => {
+                    const daysLeft = calculateDaysLeft(data.expireDate);
+                    const statusBadge = generateStatusBadge(daysLeft, daysLeft > 0 ? `(เหลือ ${daysLeft} วัน)` : '');
+                    
+                    const card = `
+                        <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300">
+                            <!-- Card Header -->
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-50/50 px-6 py-4 border-b border-gray-100 gap-3">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-full bg-brand/10 text-brand flex items-center justify-center text-xl shadow-sm flex-shrink-0">
+                                        <i class="fas fa-crown"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-0.5">แพ็คเกจปัจจุบัน</p>
+                                        <h4 class="text-lg font-bold text-gray-800 break-all">${data.package}</h4>
+                                    </div>
+                                </div>
+                                <div class="flex-shrink-0 w-full sm:w-auto mt-2 sm:mt-0 overflow-hidden">
+                                    ${statusBadge}
+                                </div>
+                            </div>
+                            
+                            <!-- Card Body -->
+                            <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8 overflow-hidden">
+                                <div class="space-y-1">
+                                    <p class="text-sm font-medium text-gray-500 flex items-center gap-2">
+                                        <i class="fas fa-envelope w-4 text-center text-gray-400"></i> บัญชีอีเมล
+                                    </p>
+                                    <p class="text-base font-semibold text-gray-900 ml-6 break-all">${data.email}</p>
+                                </div>
+                                
+                                <div class="space-y-1">
+                                    <p class="text-sm font-medium text-gray-500 flex items-center gap-2">
+                                        <i class="fas fa-hashtag w-4 text-center text-gray-400"></i> รหัสอ้างอิง
+                                    </p>
+                                    <p class="text-base font-semibold text-gray-900 ml-6 break-all">${data.id}</p>
+                                </div>
+
+                                <div class="space-y-1">
+                                    <p class="text-sm font-medium text-gray-500 flex items-center gap-2">
+                                        <i class="fas fa-calendar-check w-4 text-center text-gray-400"></i> วันที่เริ่มใช้งาน
+                                    </p>
+                                    <p class="text-base font-semibold text-gray-900 ml-6">${data.startDate}</p>
+                                </div>
+
+                                <div class="space-y-1">
+                                    <p class="text-sm font-medium text-gray-500 flex items-center gap-2">
+                                        <i class="fas fa-calendar-times w-4 text-center text-gray-400"></i> วันที่หมดอายุ
+                                    </p>
+                                    <p class="text-base font-semibold text-gray-900 ml-6">${data.expireDate}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    tbody.innerHTML += card;
+                });
+                resultContainer.classList.remove('hidden');
+                notFound.classList.add('hidden');
+            } else {
+                resultContainer.classList.add('hidden');
+                notFound.classList.remove('hidden');
+            }
+        }
+
+        function adminLogin() {
+            const email = document.getElementById('admin-email').value;
+            const pwd = document.getElementById('admin-password').value;
+            
+            if (email === appData.settings.adminEmail && pwd === appData.settings.adminPassword) {
+                document.getElementById('login-error').classList.add('hidden');
+                document.getElementById('admin-password').value = ''; // clear for security
+                switchView('view-admin-dashboard');
+                showMessage("เข้าสู่ระบบสำเร็จ");
+            } else {
+                document.getElementById('login-error').classList.remove('hidden');
+            }
+        }
+
+        function adminLogout() {
+            switchView('view-customer');
+            showMessage("ออกจากระบบแล้ว");
+        }
+
+        function toggleSidebarMenu() {
+            const menu = document.getElementById('sidebar-menu');
+            const footer = document.getElementById('sidebar-footer');
+            menu.classList.toggle('hidden');
+            menu.classList.toggle('flex');
+            footer.classList.toggle('hidden');
+            footer.classList.toggle('block');
+        }
+
+        function switchAdminTab(tabId) {
+            // Hide all contents
+            document.querySelectorAll('.admin-tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+            
+            // Update button styles
+            document.querySelectorAll('.admin-tab-btn').forEach(btn => {
+                if (btn.dataset.target === tabId) {
+                    btn.classList.add('bg-brand');
+                    btn.classList.remove('hover:bg-gray-700');
+                } else {
+                    btn.classList.remove('bg-brand');
+                    btn.classList.add('hover:bg-gray-700');
+                }
+            });
+
+            // Refresh specific tab data
+            if(tabId === 'tab-emails') renderAdminTable();
+            if(tabId === 'tab-packages') renderPackages();
+            if(tabId === 'tab-channels') renderChannels();
+            if(tabId === 'tab-dashboard') updateDashboardStats();
+            
+            // Close mobile menu if open
+            if(window.innerWidth < 768) {
+                 document.getElementById('sidebar-menu').classList.add('hidden');
+                 document.getElementById('sidebar-menu').classList.remove('flex');
+                 document.getElementById('sidebar-footer').classList.add('hidden');
+                 document.getElementById('sidebar-footer').classList.remove('block');
+            }
+        }
+
+        function updateDashboardStats() {
+            const total = appData.emails.length;
+            let active = 0, warning = 0, expired = 0;
+
+            appData.emails.forEach(e => {
+                const days = calculateDaysLeft(e.expireDate);
+                if (days < 0) expired++;
+                else if (days <= 3) warning++;
+                else active++;
+            });
+
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-active').innerText = active;
+            document.getElementById('stat-warning').innerText = warning;
+            document.getElementById('stat-expired').innerText = expired;
+        }
+
+        function refreshAdminDashboard() {
+            updateDashboardStats();
+            renderAdminTable();
+        }
+
+        function renderPackages() {
+            const list = document.getElementById('package-list');
+            list.innerHTML = '';
+            appData.packages.forEach((pkg, index) => {
+                list.innerHTML += `
+                    <li class="py-3 flex justify-between items-center">
+                        <span class="text-gray-800 break-all pr-4">${pkg}</span>
+                        <button onclick="deletePackage(${index})" class="text-red-500 hover:text-red-700 cursor-pointer p-2 flex-shrink-0"><i class="fas fa-trash"></i></button>
+                    </li>
+                `;
+            });
+            populateSelects(); // update forms
+        }
+
+        function addPackage() {
+            const input = document.getElementById('new-package-name');
+            const val = input.value.trim();
+            if(val && !appData.packages.includes(val)) {
+                appData.packages.push(val);
+                saveData();
+                renderPackages();
+                input.value = '';
+                showMessage("เพิ่มแพ็คเกจแล้ว");
+            }
+        }
+
+        function deletePackage(index) {
+            if(confirm("ยืนยันการลบแพ็คเกจนี้?")) {
+                appData.packages.splice(index, 1);
+                saveData();
+                renderPackages();
+                showMessage("ลบสำเร็จ");
+            }
+        }
+
+        function renderChannels() {
+            const list = document.getElementById('channel-list');
+            list.innerHTML = '';
+            appData.channels.forEach((ch, index) => {
+                list.innerHTML += `
+                    <li class="py-3 flex justify-between items-center">
+                        <span class="text-gray-800 break-all pr-4">${ch}</span>
+                        <button onclick="deleteChannel(${index})" class="text-red-500 hover:text-red-700 cursor-pointer p-2 flex-shrink-0"><i class="fas fa-trash"></i></button>
+                    </li>
+                `;
+            });
+            populateSelects();
+        }
+
+        function addChannel() {
+            const input = document.getElementById('new-channel-name');
+            const val = input.value.trim();
+            if(val && !appData.channels.includes(val)) {
+                appData.channels.push(val);
+                saveData();
+                renderChannels();
+                input.value = '';
+                showMessage("เพิ่มช่องทางแล้ว");
+            }
+        }
+
+        function deleteChannel(index) {
+            if(confirm("ยืนยันการลบช่องทางนี้?")) {
+                appData.channels.splice(index, 1);
+                saveData();
+                renderChannels();
+                showMessage("ลบสำเร็จ");
+            }
+        }
+
+        function populateSelects() {
+            const pkgSelect = document.getElementById('form-package');
+            // Populate defaults (will be dynamically appended if editing non-existing data)
+            pkgSelect.innerHTML = appData.packages.map(p => `<option value="${p}">${p}</option>`).join('');
+        }
+
+        // Contact Fields Dynamic Management
+        function addContactField(channelVal = '', detailVal = '') {
+            const container = document.getElementById('contacts-container');
+            const row = document.createElement('div');
+            row.className = 'flex gap-2 items-start contact-row';
+            
+            // Generate options based on available channels
+            let options = appData.channels.map(c => 
+                `<option value="${c}" ${c === channelVal ? 'selected' : ''}>${c}</option>`
+            ).join('');
+
+            // ป้องกันข้อมูลหายกรณีที่ช่องทางเก่าถูกลบออกจากระบบไปแล้ว (ให้แสดงเป็นข้อมูลเก่า)
+            if (channelVal && !appData.channels.includes(channelVal)) {
+                 options += `<option value="${channelVal}" selected>${channelVal} (ข้อมูลเก่า)</option>`;
+            } else if (!channelVal && appData.channels.length > 0) {
+                 options = appData.channels.map(c => `<option value="${c}">${c}</option>`).join('');
+            }
+
+            row.innerHTML = `
+                <select class="contact-channel w-1/3 px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand focus:border-brand text-sm bg-white shadow-sm flex-shrink-0 max-w-[120px] md:max-w-none">
+                    ${options}
+                </select>
+                <input type="text" class="contact-detail flex-grow px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand focus:border-brand text-sm shadow-sm" placeholder="ชื่อบัญชี / ID / โทรศัพท์" value="${detailVal}" required>
+                <button type="button" onclick="removeContactField(this)" class="text-red-500 bg-red-50 hover:bg-red-100 p-2.5 rounded-lg transition border border-red-100 flex-shrink-0 cursor-pointer" title="ลบช่องทางนี้">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            `;
+            container.appendChild(row);
+        }
+
+        function removeContactField(btn) {
+            const container = document.getElementById('contacts-container');
+            if(container.children.length > 1) {
+                btn.parentElement.remove();
+            } else {
+                showMessage("ต้องมีช่องทางการติดต่ออย่างน้อย 1 ช่องทาง", "error");
+            }
+        }
+
+        function renderAdminTable() {
+            const tbody = document.getElementById('admin-email-table-body');
+            tbody.innerHTML = '';
+
+            // Process data for sorting
+            let displayData = appData.emails.map(e => ({
+                ...e,
+                daysLeft: calculateDaysLeft(e.expireDate)
+            }));
+
+            // SORTING: Rule 9 (Sort by days left Ascending)
+            displayData.sort((a, b) => a.daysLeft - b.daysLeft);
+
+            displayData.forEach((data, index) => {
+                const statusBadge = generateStatusBadge(data.daysLeft, `(${data.daysLeft} วัน)`);
+                
+                // Format Contacts HTML
+                const contactsHTML = data.contacts ? data.contacts.map(c => 
+                    `<div class="mb-1"><span class="font-bold text-gray-700 truncate inline-block align-bottom max-w-[80px]">${c.channel}:</span> <span class="break-all">${c.detail}</span></div>`
+                ).join('') : '-';
+                
+                const row = `
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="py-3 px-4 whitespace-nowrap text-gray-500">${index + 1}</td>
+                        <td class="py-3 px-4 whitespace-nowrap font-medium text-gray-900">${data.id}</td>
+                        <td class="py-3 px-4 whitespace-nowrap text-gray-600 max-w-[150px] truncate" title="${data.package}">${data.package}</td>
+                        <td class="py-3 px-4 whitespace-nowrap text-gray-600">${data.email}</td>
+                        <td class="py-3 px-4 whitespace-nowrap text-gray-500">${data.startDate}</td>
+                        <td class="py-3 px-4 whitespace-nowrap text-gray-500">${data.expireDate}</td>
+                        <td class="py-3 px-4 whitespace-nowrap">
+                            ${statusBadge}
+                        </td>
+                        <td class="py-3 px-4 text-gray-500 text-xs min-w-[150px]">
+                            ${contactsHTML}
+                        </td>
+                        <td class="py-3 px-4 whitespace-nowrap text-center text-sm font-medium">
+                            <button onclick="editEmail('${data.id}')" class="text-blue-600 hover:text-blue-900 mr-3 cursor-pointer p-2" title="แก้ไข"><i class="fas fa-edit"></i></button>
+                            <button onclick="deleteEmail('${data.id}')" class="text-red-600 hover:text-red-900 cursor-pointer p-2" title="ลบ"><i class="fas fa-trash-alt"></i></button>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+
+        function openEmailModal(mode = 'add', data = null) {
+            populateSelects();
+            document.getElementById('form-mode').value = mode;
+            document.getElementById('email-form').reset();
+            const contactsContainer = document.getElementById('contacts-container');
+            contactsContainer.innerHTML = ''; // Clear contact fields
+            
+            if (mode === 'add') {
+                document.getElementById('modal-title').innerText = "เพิ่มข้อมูลเมลลูกค้า";
+                document.getElementById('form-code').value = generateNextId();
+                // Default dates
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('form-start-date').value = today;
+                
+                let nextMonth = new Date();
+                nextMonth.setMonth(nextMonth.getMonth() + 1);
+                document.getElementById('form-expire-date').value = nextMonth.toISOString().split('T')[0];
+                
+                // Add first empty contact row
+                addContactField();
+
+            } else if (mode === 'edit' && data) {
+                document.getElementById('modal-title').innerText = "แก้ไขข้อมูลเมลลูกค้า";
+                document.getElementById('form-original-id').value = data.id;
+                
+                document.getElementById('form-email').value = data.email;
+                document.getElementById('form-code').value = data.id;
+                
+                const pkgSelect = document.getElementById('form-package');
+                // ป้องกันข้อมูลหาย หากแพ็คเกจเก่าไม่มีในระบบแล้ว
+                if (data.package && !appData.packages.includes(data.package)) {
+                    pkgSelect.innerHTML += `<option value="${data.package}">${data.package} (ข้อมูลเก่า)</option>`;
+                }
+                pkgSelect.value = data.package;
+                
+                document.getElementById('form-start-date').value = data.startDate;
+                document.getElementById('form-expire-date').value = data.expireDate;
+
+                // Render contact rows based on saved data
+                if(data.contacts && data.contacts.length > 0) {
+                    data.contacts.forEach(c => addContactField(c.channel, c.detail));
+                } else {
+                    addContactField();
+                }
+            }
+
+            document.getElementById('email-modal').classList.remove('hidden');
+            document.body.classList.add('modal-active');
+        }
+
+        function closeEmailModal() {
+            document.getElementById('email-modal').classList.add('hidden');
+            document.body.classList.remove('modal-active');
+        }
+
+        function saveEmailData() {
+            const mode = document.getElementById('form-mode').value;
+            const id = document.getElementById('form-code').value; // is readonly, acts as ID
+            
+            // Gather all contacts from dynamic rows
+            const contactRows = document.querySelectorAll('.contact-row');
+            let contactsList = [];
+            contactRows.forEach(row => {
+                const channelVal = row.querySelector('.contact-channel').value;
+                const detailVal = row.querySelector('.contact-detail').value.trim();
+                if(detailVal) {
+                    contactsList.push({ channel: channelVal, detail: detailVal });
+                }
+            });
+
+            if (contactsList.length === 0) {
+                showMessage("กรุณาระบุรายละเอียดช่องทางการติดต่อ", "error");
+                return; // Prevent save if no valid contacts
+            }
+
+            const newData = {
+                id: id,
+                contacts: contactsList,
+                email: document.getElementById('form-email').value,
+                package: document.getElementById('form-package').value,
+                startDate: document.getElementById('form-start-date').value,
+                expireDate: document.getElementById('form-expire-date').value
+            };
+
+            if (mode === 'add') {
+                appData.emails.push(newData);
+                showMessage("เพิ่มข้อมูลสำเร็จ");
+            } else {
+                const index = appData.emails.findIndex(e => e.id === id);
+                if(index !== -1) {
+                    appData.emails[index] = newData;
+                    showMessage("อัปเดตข้อมูลสำเร็จ");
+                }
+            }
+
+            saveData();
+            renderAdminTable();
+            updateDashboardStats();
+            closeEmailModal();
+        }
+
+        function editEmail(id) {
+            const data = appData.emails.find(e => e.id === id);
+            if(data) openEmailModal('edit', data);
+        }
+
+        function deleteEmail(id) {
+            if(confirm("ยืนยันการลบข้อมูลนี้? การกระทำนี้ไม่สามารถกู้คืนได้")) {
+                appData.emails = appData.emails.filter(e => e.id !== id);
+                saveData();
+                renderAdminTable();
+                updateDashboardStats();
+                showMessage("ลบข้อมูลสำเร็จ");
+            }
+        }
+
+        // --- App Boot ---
+        window.onload = function() {
+            loadData();
+        };
+
+    </script>
+</body>
+</html>
