@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <script>
         tailwind.config = {
@@ -182,7 +184,7 @@
 
             <div class="flex flex-col md:flex-row gap-3">
                 <input type="text" id="search-input" onkeypress="handleSearchKeyPress(event)" placeholder="กรอกอีเมล หรือ รหัสเมล..." class="flex-grow px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent text-lg">
-                <button onclick="searchCustomerEmail()" class="bg-brand text-white px-6 py-3 rounded-lg shadow-lg hover:opacity-90 transition font-medium text-lg whitespace-nowrap">
+                <button id="btn-search" onclick="searchCustomerEmail()" class="bg-brand text-white px-6 py-3 rounded-lg shadow-lg hover:opacity-90 transition font-medium text-lg whitespace-nowrap disabled:opacity-50">
                     <i class="fas fa-search mr-2"></i> ค้นหา
                 </button>
             </div>
@@ -203,7 +205,7 @@
             <div id="search-not-found" class="mt-8 hidden text-center text-red-500 py-6 bg-red-50 rounded-xl border border-red-100">
                 <i class="fas fa-search-minus text-4xl mb-3 text-red-400"></i>
                 <h3 class="text-lg font-bold">ไม่พบข้อมูลในระบบ</h3>
-                <p class="text-sm mt-1 text-red-400">โปรดตรวจสอบอีเมลหรือรหัสเมลให้ถูกต้องอีกครั้ง</p>
+                <p class="text-sm mt-1 text-red-400" id="search-error-text">โปรดตรวจสอบอีเมลหรือรหัสเมลให้ถูกต้องอีกครั้ง</p>
             </div>
         </div>
     </div>
@@ -227,9 +229,9 @@
                         <input id="admin-password" name="password" type="password" required class="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-brand focus:border-brand sm:text-sm" placeholder="รหัสผ่าน">
                     </div>
                 </div>
-                <div id="login-error" class="text-red-500 text-sm text-center hidden">อีเมลหรือรหัสผ่านไม่ถูกต้อง</div>
+                <div id="login-error" class="text-red-500 text-sm text-center hidden">อีเมลหรือรหัสผ่านไม่ถูกต้อง หรือไม่มีสิทธิ์แอดมิน</div>
                 <div>
-                    <button type="submit" class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-brand hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand shadow-lg">
+                    <button id="btn-login" type="submit" class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-brand hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand shadow-lg disabled:opacity-50">
                         เข้าสู่ระบบ
                     </button>
                 </div>
@@ -278,7 +280,10 @@
         <div class="flex-grow p-4 md:p-8 overflow-y-auto">
             
             <div id="tab-dashboard" class="admin-tab-content active space-y-6">
-                <h2 class="text-2xl font-bold text-gray-800">ภาพรวมระบบ (Dashboard)</h2>
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-bold text-gray-800">ภาพรวมระบบ (Dashboard)</h2>
+                    <button onclick="refreshAdminDashboard()" class="text-brand hover:text-brand-dark"><i class="fas fa-sync-alt"></i> รีเฟรช</button>
+                </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <!-- Stat Card 1 -->
@@ -286,7 +291,7 @@
                         <div class="flex justify-between items-center">
                             <div>
                                 <p class="text-sm text-gray-500 uppercase tracking-wide font-semibold">เมลทั้งหมด</p>
-                                <h3 class="text-3xl font-bold text-gray-800 mt-1" id="stat-total">0</h3>
+                                <h3 class="text-3xl font-bold text-gray-800 mt-1" id="stat-total">...</h3>
                             </div>
                             <div class="p-3 bg-blue-100 rounded-full text-blue-600">
                                 <i class="fas fa-users text-xl"></i>
@@ -298,7 +303,7 @@
                         <div class="flex justify-between items-center">
                             <div>
                                 <p class="text-sm text-gray-500 uppercase tracking-wide font-semibold">กำลังใช้งาน</p>
-                                <h3 class="text-3xl font-bold text-gray-800 mt-1" id="stat-active">0</h3>
+                                <h3 class="text-3xl font-bold text-gray-800 mt-1" id="stat-active">...</h3>
                             </div>
                             <div class="p-3 bg-green-100 rounded-full text-green-600">
                                 <i class="fas fa-check-circle text-xl"></i>
@@ -310,7 +315,7 @@
                         <div class="flex justify-between items-center">
                             <div>
                                 <p class="text-sm text-gray-500 uppercase tracking-wide font-semibold">กำลังหมดอายุ (1-3 วัน)</p>
-                                <h3 class="text-3xl font-bold text-gray-800 mt-1" id="stat-warning">0</h3>
+                                <h3 class="text-3xl font-bold text-gray-800 mt-1" id="stat-warning">...</h3>
                             </div>
                             <div class="p-3 bg-yellow-100 rounded-full text-yellow-600">
                                 <i class="fas fa-exclamation-triangle text-xl"></i>
@@ -322,7 +327,7 @@
                         <div class="flex justify-between items-center">
                             <div>
                                 <p class="text-sm text-gray-500 uppercase tracking-wide font-semibold">หมดอายุแล้ว</p>
-                                <h3 class="text-3xl font-bold text-gray-800 mt-1" id="stat-expired">0</h3>
+                                <h3 class="text-3xl font-bold text-gray-800 mt-1" id="stat-expired">...</h3>
                             </div>
                             <div class="p-3 bg-red-100 rounded-full text-red-600">
                                 <i class="fas fa-times-circle text-xl"></i>
@@ -358,6 +363,7 @@
                             </thead>
                             <tbody id="admin-email-table-body" class="bg-white divide-y divide-gray-200 text-sm">
                                 <!-- Data rendered by JS -->
+                                <tr><td colspan="9" class="text-center py-4 text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i> กำลังโหลดข้อมูล...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -369,10 +375,11 @@
                 <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
                     <form onsubmit="event.preventDefault(); addPackage();" class="flex gap-3 mb-6">
                         <input type="text" id="new-package-name" placeholder="ชื่อแพ็คเกจใหม่..." required class="flex-grow px-4 py-2 border border-gray-300 rounded-lg focus:ring-brand focus:border-brand">
-                        <button type="submit" class="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition whitespace-nowrap">เพิ่มแพ็คเกจ</button>
+                        <button id="btn-add-pkg" type="submit" class="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition whitespace-nowrap disabled:opacity-50">เพิ่มแพ็คเกจ</button>
                     </form>
                     <ul id="package-list" class="divide-y divide-gray-200 border-t">
                         <!-- Packages loaded here -->
+                        <li class="py-4 text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i> กำลังโหลดแพ็คเกจ...</li>
                     </ul>
                 </div>
             </div>
@@ -382,10 +389,11 @@
                 <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
                     <form onsubmit="event.preventDefault(); addChannel();" class="flex gap-3 mb-6">
                         <input type="text" id="new-channel-name" placeholder="เช่น LINE, Facebook, IG..." required class="flex-grow px-4 py-2 border border-gray-300 rounded-lg focus:ring-brand focus:border-brand">
-                        <button type="submit" class="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition whitespace-nowrap">เพิ่มช่องทาง</button>
+                        <button id="btn-add-channel" type="submit" class="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition whitespace-nowrap disabled:opacity-50">เพิ่มช่องทาง</button>
                     </form>
                     <ul id="channel-list" class="divide-y divide-gray-200 border-t">
                         <!-- Channels loaded here -->
+                        <li class="py-4 text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i> กำลังโหลดช่องทาง...</li>
                     </ul>
                 </div>
             </div>
@@ -429,7 +437,7 @@
                             </div>
                         </div>
                         
-                        <button onclick="saveGeneralSettings()" class="w-full bg-brand text-white py-2 rounded-lg shadow hover:opacity-90 transition mt-4">บันทึกการตั้งค่าทั่วไป</button>
+                        <button id="btn-save-settings" onclick="saveGeneralSettings()" class="w-full bg-brand text-white py-2 rounded-lg shadow hover:opacity-90 transition mt-4 disabled:opacity-50">บันทึกการตั้งค่าทั่วไป</button>
                     </div>
 
                     <!-- Admin Account Settings -->
@@ -443,7 +451,7 @@
                             <label class="block text-sm font-medium text-gray-700 mb-1">รหัสผ่านใหม่ (เว้นว่างหากไม่ต้องการเปลี่ยน)</label>
                             <input type="password" id="setting-admin-pwd" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-brand focus:border-brand">
                         </div>
-                        <button onclick="saveAdminSettings()" class="w-full bg-gray-800 text-white py-2 rounded-lg shadow hover:opacity-90 transition mt-4">อัปเดตบัญชีแอดมิน</button>
+                        <button id="btn-save-admin" onclick="saveAdminSettings()" class="w-full bg-gray-800 text-white py-2 rounded-lg shadow hover:opacity-90 transition mt-4 disabled:opacity-50">อัปเดตบัญชีแอดมิน</button>
                     </div>
                 </div>
             </div>
@@ -507,7 +515,7 @@
 
                 <div class="flex justify-end gap-3 mt-8 pt-4 border-t border-gray-200">
                     <button type="button" onclick="closeEmailModal()" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition cursor-pointer">ยกเลิก</button>
-                    <button type="submit" class="px-6 py-2 bg-brand text-white rounded-lg shadow hover:opacity-90 transition cursor-pointer">บันทึกข้อมูล</button>
+                    <button id="btn-save-email" type="submit" class="px-6 py-2 bg-brand text-white rounded-lg shadow hover:opacity-90 transition cursor-pointer disabled:opacity-50">บันทึกข้อมูล</button>
                 </div>
             </form>
         </div>
@@ -517,6 +525,11 @@
     <div id="toast-container" class="fixed top-5 right-5 z-[9999] flex flex-col gap-3 pointer-events-none"></div>
 
     <script>
+        // --- Supabase Client Initialization ---
+        const SUPABASE_URL = 'https://hgveszibdyjchtggglas.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhndmVzemliZHlqY2h0Z2dnbGFzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE0NTY0NzksImV4cCI6MjEwNzAzMjQ3OX0.Yfja9EI1yj01UwQ_Wx3ulx1FAB4MVqcZARSqsosrNDM';
+        var supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
         // --- State Management ---
         const MOCK_LOGO = "https://placehold.co/150x150/00a2ff/ffffff?text=Logo";
         
@@ -524,60 +537,58 @@
             settings: {
                 siteName: "NONNON STORE",
                 themeColor: "#00a2ff",
-                logoDataUrl: MOCK_LOGO,
-                bgDataUrl: "",
-                adminEmail: "admin@canva.com",
-                adminPassword: "admin"
+                logoDataUrl: "",
+                bgDataUrl: ""
             },
-            packages: ["Canva Pro 1 เดือน", "Canva Pro 1 ปี", "Canva Edu ตลอดชีพ"],
-            channels: ["LINE", "Facebook", "Instagram", "เบอร์โทรศัพท์"],
-            emails: [
-                { id: "NN001", email: "user1@gmail.com", package: "Canva Pro 1 ปี", startDate: "2023-01-01", expireDate: "2026-12-31", contacts: [{ channel: "LINE", detail: "@user1" }] },
-                { id: "NN002", email: "user2@hotmail.com", package: "Canva Pro 1 เดือน", startDate: "2023-10-01", expireDate: getRelativeDate(2), contacts: [{ channel: "Facebook", detail: "User Two" }, { channel: "เบอร์โทรศัพท์", detail: "089-123-4567" }] },
-                { id: "NN003", email: "user3@yahoo.com", package: "Canva Edu ตลอดชีพ", startDate: "2023-09-01", expireDate: getRelativeDate(-5), contacts: [{ channel: "Instagram", detail: "user_3" }] }
-            ]
+            packages: [], // Array of objects {id, name}
+            channels: [], // Array of objects {id, name}
+            emails: []    // Loaded from DB for dashboard
         };
 
-        // Helper to generate mock dates relative to today for demo purposes
-        function getRelativeDate(daysOffset) {
-            const date = new Date();
-            date.setDate(date.getDate() + daysOffset);
-            return date.toISOString().split('T')[0];
+        // --- Escaper for Security (XSS Protection) ---
+        function escapeHTML(str) {
+            if (str === null || str === undefined) return '';
+            return str.toString().replace(/[&<>'"]/g, 
+                tag => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                }[tag] || tag)
+            );
         }
 
-        function loadData() {
-            const stored = localStorage.getItem('canvaAppDB');
-            if (stored) {
-                appData = JSON.parse(stored);
-                
-                // Migration: Convert old single channel/detail to new contacts array structure
-                let dataModified = false;
-                appData.emails.forEach(e => {
-                    if(!e.contacts) {
-                        e.contacts = [{ channel: e.channel || 'LINE', detail: e.detail || '-' }];
-                        delete e.channel;
-                        delete e.detail;
-                        dataModified = true;
-                    }
-                });
-
-                // Migration: บังคับอัปเดตสีและชื่อร้านให้ตรงกับ NONNON STORE หากยังเป็นค่าเริ่มต้นเดิมอยู่
-                if (appData.settings.themeColor === "#4F46E5" || appData.settings.themeColor === "#4f46e5") {
-                    appData.settings.themeColor = "#00a2ff";
-                    appData.settings.siteName = "NONNON STORE";
-                    dataModified = true;
+        // --- Init Function ---
+        window.onload = async function() {
+            await fetchSettings();
+            
+            // Check session automatically
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) {
+                const isAdmin = await verifyAdminStatus();
+                if (isAdmin) {
+                    // Populate email form for admin update
+                    document.getElementById('setting-admin-email').value = session.user.email;
+                } else {
+                    await supabaseClient.auth.signOut();
                 }
-
-                if(dataModified) saveData();
-
-            } else {
-                saveData(); // Save defaults
             }
-            applySettings();
-        }
+        };
 
-        function saveData() {
-            localStorage.setItem('canvaAppDB', JSON.stringify(appData));
+        async function fetchSettings() {
+            try {
+                const { data, error } = await supabaseClient.from('settings').select('*').eq('id', 1).single();
+                if (data) {
+                    appData.settings.siteName = data.site_name || "NONNON STORE";
+                    appData.settings.themeColor = data.theme_color || "#00a2ff";
+                    if (data.logo_url) appData.settings.logoDataUrl = data.logo_url;
+                    if (data.bg_url) appData.settings.bgDataUrl = data.bg_url;
+                    applySettings();
+                }
+            } catch (err) {
+                console.error("Error loading settings:", err);
+            }
         }
 
         // --- Core Utilities ---
@@ -606,7 +617,7 @@
                         <span class="status-ping-2 ${st.ping}"></span>
                         <span class="status-dot ${st.dot}"></span>
                     </span>
-                    ${st.text} <span class="ml-1 font-medium">${extraText}</span>
+                    ${st.text} <span class="ml-1 font-medium">${escapeHTML(extraText)}</span>
                 </span>
             `;
         }
@@ -622,7 +633,6 @@
         }
 
         function showMessage(msg, type = 'success') {
-            // สร้าง container หากยังไม่มี
             let container = document.getElementById('toast-container');
             if (!container) {
                 container = document.createElement('div');
@@ -631,12 +641,10 @@
                 document.body.appendChild(container);
             }
 
-            // ตั้งค่าไอคอนและสีตามประเภท
             const isSuccess = type === 'success';
             const iconClass = isSuccess ? 'fas fa-check-circle text-green-500' : 'fas fa-exclamation-circle text-red-500';
             const borderClass = isSuccess ? 'border-green-500' : 'border-red-500';
 
-            // สร้าง Element สำหรับ Toast
             const toast = document.createElement('div');
             toast.className = `flex items-center gap-4 min-w-[280px] max-w-sm px-5 py-4 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-l-4 ${borderClass} bg-white transform transition-all duration-500 translate-x-[120%] opacity-0 pointer-events-auto`;
             
@@ -645,7 +653,7 @@
                     <i class="${iconClass}"></i>
                 </div>
                 <div class="flex-grow font-semibold text-gray-700 text-sm">
-                    ${msg}
+                    ${escapeHTML(msg)}
                 </div>
                 <button onclick="this.parentElement.classList.remove('translate-x-0', 'opacity-100'); this.parentElement.classList.add('translate-x-[120%]', 'opacity-0'); setTimeout(() => this.parentElement.remove(), 500);" class="flex-shrink-0 text-gray-400 hover:text-gray-600 transition ml-2 outline-none cursor-pointer">
                     <i class="fas fa-times"></i>
@@ -654,7 +662,6 @@
 
             container.appendChild(toast);
 
-            // Animate แสดง Toast (Slide in)
             requestAnimationFrame(() => {
                 setTimeout(() => {
                     toast.classList.remove('translate-x-[120%]', 'opacity-0');
@@ -662,38 +669,72 @@
                 }, 10);
             });
 
-            // Animate ซ่อนและลบ Toast (Slide out) หลังจาก 3 วินาที
             setTimeout(() => {
-                // เช็คว่ายังมี Element อยู่หรือไม่ (เผื่อโดนผู้ใช้กดปิดไปก่อน)
                 if (toast.parentElement) {
                     toast.classList.remove('translate-x-0', 'opacity-100');
                     toast.classList.add('translate-x-[120%]', 'opacity-0');
                     setTimeout(() => {
                         if (toast.parentElement) toast.remove();
-                    }, 500); // รอจนกว่า Transition (Slide out) จะเสร็จสิ้นแล้วค่อยลบออกจาก DOM
+                    }, 500); 
                 }
             }, 3000);
         }
 
-        // --- UI View Switching ---
-        function switchView(viewId) {
-            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
-            document.getElementById(viewId).classList.add('active');
-            
-            if(viewId === 'view-admin-dashboard') {
-                refreshAdminDashboard();
-                switchAdminTab('tab-dashboard');
+        // --- Security & Routing ---
+        async function verifyAdminStatus() {
+            try {
+                const { data: isAdmin, error } = await supabaseClient.rpc('is_admin');
+                if (error) throw error;
+                return isAdmin === true;
+            } catch (err) {
+                console.error("verifyAdminStatus error:", err);
+                return false;
             }
         }
 
-        // --- Image Compression (Canvas) - Updated to use WebP for transparency ---
+        function switchView(viewId) {
+            // Protected Route Check
+            if (viewId === 'view-admin-dashboard') {
+                supabaseClient.auth.getSession().then(async ({ data: { session } }) => {
+                    if (session && await verifyAdminStatus()) {
+                        document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+                        document.getElementById('view-admin-dashboard').classList.add('active');
+                        refreshAdminDashboard();
+                        switchAdminTab('tab-dashboard');
+                    } else {
+                        showMessage("คุณไม่มีสิทธิ์เข้าถึงส่วนนี้", "error");
+                        await supabaseClient.auth.signOut();
+                        switchView('view-admin-login');
+                    }
+                });
+                return;
+            }
+
+            if (viewId === 'view-admin-login') {
+                // Skip login if already logged in as admin
+                supabaseClient.auth.getSession().then(async ({ data: { session } }) => {
+                    if (session && await verifyAdminStatus()) {
+                        switchView('view-admin-dashboard');
+                    } else {
+                        document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+                        document.getElementById(viewId).classList.add('active');
+                    }
+                });
+                return;
+            }
+
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+        }
+
+        // --- Image Compression (Canvas to WebP base64) ---
         function compressImage(file, callback) {
             const reader = new FileReader();
             reader.onload = function(event) {
                 const img = new Image();
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 800; // max size for logo/bg
+                    const MAX_WIDTH = 800; 
                     const MAX_HEIGHT = 800;
                     let width = img.width;
                     let height = img.height;
@@ -713,7 +754,6 @@
                     canvas.height = height;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
-                    // เปลี่ยนจาก image/jpeg เป็น image/webp เพื่อรักษาพื้นหลังแบบโปร่งใส (Transparency) ของ PNG 
                     const dataUrl = canvas.toDataURL('image/webp', 0.8); 
                     callback(dataUrl);
                 }
@@ -723,7 +763,6 @@
         }
 
         function applySettings() {
-            // Apply variables
             document.documentElement.style.setProperty('--theme-color', appData.settings.themeColor);
             
             if (appData.settings.bgDataUrl) {
@@ -732,35 +771,35 @@
                 document.documentElement.style.setProperty('--bg-image', 'none');
             }
 
-            // Customer View Update
             document.getElementById('customer-site-name').innerText = appData.settings.siteName;
             document.getElementById('customer-logo').src = appData.settings.logoDataUrl || MOCK_LOGO;
             
-            // Admin Sidebar Update
             document.getElementById('admin-sidebar-name').innerText = appData.settings.siteName;
             document.getElementById('admin-sidebar-logo').src = appData.settings.logoDataUrl || MOCK_LOGO;
 
-            // Populate Settings Form
             document.getElementById('setting-sitename').value = appData.settings.siteName;
             document.getElementById('setting-color-picker').value = appData.settings.themeColor;
             document.getElementById('setting-color-text').value = appData.settings.themeColor;
-            document.getElementById('setting-admin-email').value = appData.settings.adminEmail;
 
-            // Logo preview
             if(appData.settings.logoDataUrl) {
                 document.getElementById('preview-logo').src = appData.settings.logoDataUrl;
                 document.getElementById('preview-logo').classList.remove('hidden');
                 document.getElementById('btn-clear-logo').classList.remove('hidden');
+            } else {
+                document.getElementById('preview-logo').classList.add('hidden');
+                document.getElementById('btn-clear-logo').classList.add('hidden');
             }
-            // Bg preview
+            
             if(appData.settings.bgDataUrl) {
                 document.getElementById('preview-bg').src = appData.settings.bgDataUrl;
                 document.getElementById('preview-bg').classList.remove('hidden');
                 document.getElementById('btn-clear-bg').classList.remove('hidden');
+            } else {
+                document.getElementById('preview-bg').classList.add('hidden');
+                document.getElementById('btn-clear-bg').classList.add('hidden');
             }
         }
 
-        // Sync color picker and text
         document.getElementById('setting-color-picker').addEventListener('input', (e) => {
             document.getElementById('setting-color-text').value = e.target.value;
         });
@@ -768,14 +807,11 @@
             document.getElementById('setting-color-picker').value = e.target.value;
         });
 
-        // File uploads
         document.getElementById('setting-logo-file').addEventListener('change', function(e) {
             if(e.target.files && e.target.files[0]) {
                 compressImage(e.target.files[0], (compressedUrl) => {
                     appData.settings.logoDataUrl = compressedUrl;
                     applySettings();
-                    saveData();
-                    showMessage("อัปเดตโลโก้สำเร็จ");
                 });
             }
         });
@@ -785,156 +821,228 @@
                 compressImage(e.target.files[0], (compressedUrl) => {
                     appData.settings.bgDataUrl = compressedUrl;
                     applySettings();
-                    saveData();
-                    showMessage("อัปเดตภาพพื้นหลังสำเร็จ");
                 });
             }
         });
 
         function clearLogo() {
-            appData.settings.logoDataUrl = MOCK_LOGO;
+            appData.settings.logoDataUrl = "";
             document.getElementById('setting-logo-file').value = "";
-            document.getElementById('preview-logo').classList.add('hidden');
-            document.getElementById('btn-clear-logo').classList.add('hidden');
-            applySettings(); saveData(); showMessage("ลบโลโก้สำเร็จ");
+            applySettings(); 
         }
         function clearBg() {
             appData.settings.bgDataUrl = "";
             document.getElementById('setting-bg-file').value = "";
-            document.getElementById('preview-bg').classList.add('hidden');
-            document.getElementById('btn-clear-bg').classList.add('hidden');
-            applySettings(); saveData(); showMessage("ลบภาพพื้นหลังสำเร็จ");
+            applySettings(); 
         }
 
-        function saveGeneralSettings() {
+        async function saveGeneralSettings() {
+            const btn = document.getElementById('btn-save-settings');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> กำลังบันทึก...';
+            
             appData.settings.siteName = document.getElementById('setting-sitename').value;
             appData.settings.themeColor = document.getElementById('setting-color-picker').value;
             applySettings();
-            saveData();
-            showMessage("บันทึกการตั้งค่าทั่วไปแล้ว");
+            
+            try {
+                const { error } = await supabaseClient.from('settings').upsert({
+                    id: 1,
+                    site_name: appData.settings.siteName,
+                    theme_color: appData.settings.themeColor,
+                    logo_url: appData.settings.logoDataUrl,
+                    bg_url: appData.settings.bgDataUrl
+                });
+                
+                if (error) throw error;
+                showMessage("บันทึกการตั้งค่าทั่วไปแล้ว");
+            } catch (err) {
+                showMessage("เกิดข้อผิดพลาดในการบันทึก", "error");
+                console.error(err);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "บันทึกการตั้งค่าทั่วไป";
+            }
         }
         
-        function saveAdminSettings() {
-            appData.settings.adminEmail = document.getElementById('setting-admin-email').value;
+        async function saveAdminSettings() {
+            const btn = document.getElementById('btn-save-admin');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> กำลังอัปเดต...';
+            
+            const newEmail = document.getElementById('setting-admin-email').value;
             const newPwd = document.getElementById('setting-admin-pwd').value;
-            if(newPwd) {
-                appData.settings.adminPassword = newPwd;
-                document.getElementById('setting-admin-pwd').value = ""; // clear input
+            let updates = {};
+            
+            if (newEmail) updates.email = newEmail;
+            if (newPwd) updates.password = newPwd;
+            
+            try {
+                if(Object.keys(updates).length > 0) {
+                    const { error } = await supabaseClient.auth.updateUser(updates);
+                    if (error) throw error;
+                    showMessage("อัปเดตข้อมูลบัญชีสำเร็จ (อาจต้องกดยืนยันในอีเมลหากเปลี่ยนอีเมล)");
+                    document.getElementById('setting-admin-pwd').value = ""; 
+                }
+            } catch (err) {
+                showMessage("ผิดพลาด: " + err.message, "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "อัปเดตบัญชีแอดมิน";
             }
-            saveData();
-            showMessage("อัปเดตข้อมูลแอดมินแล้ว");
         }
 
-        // ค้นหาเมื่อกดปุ่ม Enter
+        // --- Customer Search Form ---
         function handleSearchKeyPress(event) {
             if (event.key === 'Enter') {
                 searchCustomerEmail();
             }
         }
 
-        // ค้นหาให้แสดงผลเป็นการ์ด
-        function searchCustomerEmail() {
-            const query = document.getElementById('search-input').value.trim().toLowerCase();
+        async function searchCustomerEmail() {
+            const query = document.getElementById('search-input').value.trim();
             const resultContainer = document.getElementById('search-result-container');
             const tbody = document.getElementById('search-result-body');
             const notFound = document.getElementById('search-not-found');
+            const errorText = document.getElementById('search-error-text');
+            const btn = document.getElementById('btn-search');
 
             if (!query) {
                 showMessage("กรุณากรอกอีเมล หรือ รหัสเมล", "error");
                 return;
             }
 
-            // Find match by ID or Email
-            const matches = appData.emails.filter(e => 
-                e.id.toLowerCase() === query || e.email.toLowerCase() === query
-            );
-
-            tbody.innerHTML = '';
+            btn.disabled = true;
+            const ogHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> กำลังค้นหา...';
             
-            if (matches.length > 0) {
-                matches.forEach(data => {
-                    const daysLeft = calculateDaysLeft(data.expireDate);
-                    const statusBadge = generateStatusBadge(daysLeft, daysLeft > 0 ? `(เหลือ ${daysLeft} วัน)` : '');
-                    
-                    const card = `
-                        <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300">
-                            <!-- Card Header -->
-                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-50/50 px-6 py-4 border-b border-gray-100 gap-3">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-full bg-brand/10 text-brand flex items-center justify-center text-xl shadow-sm flex-shrink-0">
-                                        <i class="fas fa-crown"></i>
+            try {
+                // Search ignoring case on id or email
+                const { data: matches, error } = await supabaseClient
+                    .from('customers')
+                    .select('*, customer_contacts(*)')
+                    .or(`id.ilike.%${query}%,email.ilike.%${query}%`);
+
+                if (error) throw error;
+
+                tbody.innerHTML = '';
+                
+                if (matches && matches.length > 0) {
+                    matches.forEach(data => {
+                        const daysLeft = calculateDaysLeft(data.expire_date);
+                        const statusBadge = generateStatusBadge(daysLeft, daysLeft > 0 ? `(เหลือ ${daysLeft} วัน)` : '');
+                        
+                        const card = `
+                            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300">
+                                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-50/50 px-6 py-4 border-b border-gray-100 gap-3">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-full bg-brand/10 text-brand flex items-center justify-center text-xl shadow-sm flex-shrink-0">
+                                            <i class="fas fa-crown"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-0.5">แพ็คเกจปัจจุบัน</p>
+                                            <h4 class="text-lg font-bold text-gray-800 break-all">${escapeHTML(data.package_name)}</h4>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-0.5">แพ็คเกจปัจจุบัน</p>
-                                        <h4 class="text-lg font-bold text-gray-800 break-all">${data.package}</h4>
+                                    <div class="flex-shrink-0 w-full sm:w-auto mt-2 sm:mt-0 overflow-hidden">
+                                        ${statusBadge}
                                     </div>
-                                </div>
-                                <div class="flex-shrink-0 w-full sm:w-auto mt-2 sm:mt-0 overflow-hidden">
-                                    ${statusBadge}
-                                </div>
-                            </div>
-                            
-                            <!-- Card Body -->
-                            <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8 overflow-hidden">
-                                <div class="space-y-1">
-                                    <p class="text-sm font-medium text-gray-500 flex items-center gap-2">
-                                        <i class="fas fa-envelope w-4 text-center text-gray-400"></i> บัญชีอีเมล
-                                    </p>
-                                    <p class="text-base font-semibold text-gray-900 ml-6 break-all">${data.email}</p>
                                 </div>
                                 
-                                <div class="space-y-1">
-                                    <p class="text-sm font-medium text-gray-500 flex items-center gap-2">
-                                        <i class="fas fa-hashtag w-4 text-center text-gray-400"></i> รหัสอ้างอิง
-                                    </p>
-                                    <p class="text-base font-semibold text-gray-900 ml-6 break-all">${data.id}</p>
-                                </div>
+                                <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8 overflow-hidden">
+                                    <div class="space-y-1">
+                                        <p class="text-sm font-medium text-gray-500 flex items-center gap-2">
+                                            <i class="fas fa-envelope w-4 text-center text-gray-400"></i> บัญชีอีเมล
+                                        </p>
+                                        <p class="text-base font-semibold text-gray-900 ml-6 break-all">${escapeHTML(data.email)}</p>
+                                    </div>
+                                    
+                                    <div class="space-y-1">
+                                        <p class="text-sm font-medium text-gray-500 flex items-center gap-2">
+                                            <i class="fas fa-hashtag w-4 text-center text-gray-400"></i> รหัสอ้างอิง
+                                        </p>
+                                        <p class="text-base font-semibold text-gray-900 ml-6 break-all">${escapeHTML(data.id)}</p>
+                                    </div>
 
-                                <div class="space-y-1">
-                                    <p class="text-sm font-medium text-gray-500 flex items-center gap-2">
-                                        <i class="fas fa-calendar-check w-4 text-center text-gray-400"></i> วันที่เริ่มใช้งาน
-                                    </p>
-                                    <p class="text-base font-semibold text-gray-900 ml-6">${data.startDate}</p>
-                                </div>
+                                    <div class="space-y-1">
+                                        <p class="text-sm font-medium text-gray-500 flex items-center gap-2">
+                                            <i class="fas fa-calendar-check w-4 text-center text-gray-400"></i> วันที่เริ่มใช้งาน
+                                        </p>
+                                        <p class="text-base font-semibold text-gray-900 ml-6">${escapeHTML(data.start_date)}</p>
+                                    </div>
 
-                                <div class="space-y-1">
-                                    <p class="text-sm font-medium text-gray-500 flex items-center gap-2">
-                                        <i class="fas fa-calendar-times w-4 text-center text-gray-400"></i> วันที่หมดอายุ
-                                    </p>
-                                    <p class="text-base font-semibold text-gray-900 ml-6">${data.expireDate}</p>
+                                    <div class="space-y-1">
+                                        <p class="text-sm font-medium text-gray-500 flex items-center gap-2">
+                                            <i class="fas fa-calendar-times w-4 text-center text-gray-400"></i> วันที่หมดอายุ
+                                        </p>
+                                        <p class="text-base font-semibold text-gray-900 ml-6">${escapeHTML(data.expire_date)}</p>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    `;
-                    tbody.innerHTML += card;
-                });
-                resultContainer.classList.remove('hidden');
-                notFound.classList.add('hidden');
-            } else {
+                        `;
+                        tbody.innerHTML += card;
+                    });
+                    resultContainer.classList.remove('hidden');
+                    notFound.classList.add('hidden');
+                } else {
+                    errorText.innerText = "โปรดตรวจสอบอีเมลหรือรหัสเมลให้ถูกต้องอีกครั้ง";
+                    resultContainer.classList.add('hidden');
+                    notFound.classList.remove('hidden');
+                }
+            } catch (err) {
+                console.error(err);
+                errorText.innerText = "เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์";
                 resultContainer.classList.add('hidden');
                 notFound.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = ogHtml;
             }
         }
 
-        function adminLogin() {
+        // --- Admin Authentication ---
+        async function adminLogin() {
+            const btn = document.getElementById('btn-login');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> กำลังเข้าสู่ระบบ...';
+            
             const email = document.getElementById('admin-email').value;
             const pwd = document.getElementById('admin-password').value;
             
-            if (email === appData.settings.adminEmail && pwd === appData.settings.adminPassword) {
-                document.getElementById('login-error').classList.add('hidden');
-                document.getElementById('admin-password').value = ''; // clear for security
-                switchView('view-admin-dashboard');
-                showMessage("เข้าสู่ระบบสำเร็จ");
-            } else {
-                document.getElementById('login-error').classList.remove('hidden');
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ email: email, password: pwd });
+                if (error) throw error;
+                
+                // Security Check Admin
+                const isAdmin = await verifyAdminStatus();
+                if (isAdmin) {
+                    document.getElementById('login-error').classList.add('hidden');
+                    document.getElementById('admin-password').value = ''; 
+                    switchView('view-admin-dashboard');
+                    showMessage("เข้าสู่ระบบสำเร็จ");
+                    document.getElementById('setting-admin-email').value = email;
+                } else {
+                    await supabaseClient.auth.signOut();
+                    throw new Error("คุณไม่ใช่แอดมิน");
+                }
+            } catch (err) {
+                const errorEl = document.getElementById('login-error');
+                errorEl.innerText = "อีเมลหรือรหัสผ่านไม่ถูกต้อง หรือไม่มีสิทธิ์แอดมิน";
+                errorEl.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'เข้าสู่ระบบ';
             }
         }
 
-        function adminLogout() {
+        async function adminLogout() {
+            await supabaseClient.auth.signOut();
+            appData.emails = []; // clear memory
             switchView('view-customer');
             showMessage("ออกจากระบบแล้ว");
         }
 
+        // --- Admin Dashboard & Routing ---
         function toggleSidebarMenu() {
             const menu = document.getElementById('sidebar-menu');
             const footer = document.getElementById('sidebar-footer');
@@ -944,12 +1052,10 @@
             footer.classList.toggle('block');
         }
 
-        function switchAdminTab(tabId) {
-            // Hide all contents
+        async function switchAdminTab(tabId) {
             document.querySelectorAll('.admin-tab-content').forEach(el => el.classList.add('hidden'));
             document.getElementById(tabId).classList.remove('hidden');
             
-            // Update button styles
             document.querySelectorAll('.admin-tab-btn').forEach(btn => {
                 if (btn.dataset.target === tabId) {
                     btn.classList.add('bg-brand');
@@ -960,13 +1066,11 @@
                 }
             });
 
-            // Refresh specific tab data
             if(tabId === 'tab-emails') renderAdminTable();
-            if(tabId === 'tab-packages') renderPackages();
-            if(tabId === 'tab-channels') renderChannels();
+            if(tabId === 'tab-packages') fetchPackages();
+            if(tabId === 'tab-channels') fetchChannels();
             if(tabId === 'tab-dashboard') updateDashboardStats();
             
-            // Close mobile menu if open
             if(window.innerWidth < 768) {
                  document.getElementById('sidebar-menu').classList.add('hidden');
                  document.getElementById('sidebar-menu').classList.remove('flex');
@@ -975,12 +1079,34 @@
             }
         }
 
+        async function fetchAllCustomers() {
+            try {
+                const { data, error } = await supabaseClient.from('customers').select('*, customer_contacts(*)');
+                if (error) throw error;
+                appData.emails = data || [];
+            } catch (err) {
+                console.error("Error fetching customers:", err);
+                showMessage("โหลดข้อมูลลูกค้าไม่สำเร็จ", "error");
+            }
+        }
+
+        async function refreshAdminDashboard() {
+            const refreshBtn = document.querySelector('#tab-dashboard button');
+            if (refreshBtn) refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังโหลด...';
+            
+            await fetchAllCustomers();
+            updateDashboardStats();
+            renderAdminTable();
+            
+            if (refreshBtn) refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> รีเฟรช';
+        }
+
         function updateDashboardStats() {
             const total = appData.emails.length;
             let active = 0, warning = 0, expired = 0;
 
             appData.emails.forEach(e => {
-                const days = calculateDaysLeft(e.expireDate);
+                const days = calculateDaysLeft(e.expire_date);
                 if (days < 0) expired++;
                 else if (days <= 3) warning++;
                 else active++;
@@ -992,110 +1118,161 @@
             document.getElementById('stat-expired').innerText = expired;
         }
 
-        function refreshAdminDashboard() {
-            updateDashboardStats();
-            renderAdminTable();
+        // --- Packages Management ---
+        async function fetchPackages() {
+            document.getElementById('package-list').innerHTML = '<li class="py-4 text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i> กำลังโหลดแพ็คเกจ...</li>';
+            try {
+                const { data, error } = await supabaseClient.from('packages').select('*').order('created_at', { ascending: true });
+                if (error) throw error;
+                appData.packages = data || [];
+                renderPackages();
+            } catch (err) {
+                showMessage("โหลดแพ็คเกจล้มเหลว", "error");
+            }
         }
 
         function renderPackages() {
             const list = document.getElementById('package-list');
             list.innerHTML = '';
-            appData.packages.forEach((pkg, index) => {
+            if (appData.packages.length === 0) list.innerHTML = '<li class="py-4 text-center text-gray-500">ไม่มีแพ็คเกจในระบบ</li>';
+            
+            appData.packages.forEach((pkg) => {
                 list.innerHTML += `
-                    <li class="py-3 flex justify-between items-center">
-                        <span class="text-gray-800 break-all pr-4">${pkg}</span>
-                        <button onclick="deletePackage(${index})" class="text-red-500 hover:text-red-700 cursor-pointer p-2 flex-shrink-0"><i class="fas fa-trash"></i></button>
+                    <li class="py-3 flex justify-between items-center hover:bg-gray-50 px-2 transition">
+                        <span class="text-gray-800 break-all pr-4">${escapeHTML(pkg.name)}</span>
+                        <button onclick="deletePackage('${pkg.id}')" class="text-red-500 hover:text-red-700 cursor-pointer p-2 flex-shrink-0"><i class="fas fa-trash"></i></button>
                     </li>
                 `;
             });
-            populateSelects(); // update forms
+            populateSelects(); 
         }
 
-        function addPackage() {
+        async function addPackage() {
+            const btn = document.getElementById('btn-add-pkg');
             const input = document.getElementById('new-package-name');
             const val = input.value.trim();
-            if(val && !appData.packages.includes(val)) {
-                appData.packages.push(val);
-                saveData();
-                renderPackages();
-                input.value = '';
-                showMessage("เพิ่มแพ็คเกจแล้ว");
+            if(val && !appData.packages.some(p => p.name === val)) {
+                btn.disabled = true;
+                try {
+                    const { data, error } = await supabaseClient.from('packages').insert([{ name: val }]).select();
+                    if (error) throw error;
+                    appData.packages.push(data[0]);
+                    renderPackages();
+                    input.value = '';
+                    showMessage("เพิ่มแพ็คเกจแล้ว");
+                } catch (err) {
+                    showMessage("เพิ่มแพ็คเกจล้มเหลว", "error");
+                } finally {
+                    btn.disabled = false;
+                }
             }
         }
 
-        function deletePackage(index) {
+        async function deletePackage(id) {
             if(confirm("ยืนยันการลบแพ็คเกจนี้?")) {
-                appData.packages.splice(index, 1);
-                saveData();
-                renderPackages();
-                showMessage("ลบสำเร็จ");
+                try {
+                    const { error } = await supabaseClient.from('packages').delete().eq('id', id);
+                    if (error) throw error;
+                    appData.packages = appData.packages.filter(p => p.id !== id);
+                    renderPackages();
+                    showMessage("ลบสำเร็จ");
+                } catch (err) {
+                    showMessage("ลบไม่สำเร็จ", "error");
+                }
+            }
+        }
+
+        // --- Channels Management ---
+        async function fetchChannels() {
+            document.getElementById('channel-list').innerHTML = '<li class="py-4 text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i> กำลังโหลดช่องทาง...</li>';
+            try {
+                const { data, error } = await supabaseClient.from('channels').select('*').order('created_at', { ascending: true });
+                if (error) throw error;
+                appData.channels = data || [];
+                renderChannels();
+            } catch (err) {
+                showMessage("โหลดช่องทางติดต่อล้มเหลว", "error");
             }
         }
 
         function renderChannels() {
             const list = document.getElementById('channel-list');
             list.innerHTML = '';
-            appData.channels.forEach((ch, index) => {
+            if (appData.channels.length === 0) list.innerHTML = '<li class="py-4 text-center text-gray-500">ไม่มีช่องทางติดต่อในระบบ</li>';
+            
+            appData.channels.forEach((ch) => {
                 list.innerHTML += `
-                    <li class="py-3 flex justify-between items-center">
-                        <span class="text-gray-800 break-all pr-4">${ch}</span>
-                        <button onclick="deleteChannel(${index})" class="text-red-500 hover:text-red-700 cursor-pointer p-2 flex-shrink-0"><i class="fas fa-trash"></i></button>
+                    <li class="py-3 flex justify-between items-center hover:bg-gray-50 px-2 transition">
+                        <span class="text-gray-800 break-all pr-4">${escapeHTML(ch.name)}</span>
+                        <button onclick="deleteChannel('${ch.id}')" class="text-red-500 hover:text-red-700 cursor-pointer p-2 flex-shrink-0"><i class="fas fa-trash"></i></button>
                     </li>
                 `;
             });
             populateSelects();
         }
 
-        function addChannel() {
+        async function addChannel() {
+            const btn = document.getElementById('btn-add-channel');
             const input = document.getElementById('new-channel-name');
             const val = input.value.trim();
-            if(val && !appData.channels.includes(val)) {
-                appData.channels.push(val);
-                saveData();
-                renderChannels();
-                input.value = '';
-                showMessage("เพิ่มช่องทางแล้ว");
+            if(val && !appData.channels.some(c => c.name === val)) {
+                btn.disabled = true;
+                try {
+                    const { data, error } = await supabaseClient.from('channels').insert([{ name: val }]).select();
+                    if (error) throw error;
+                    appData.channels.push(data[0]);
+                    renderChannels();
+                    input.value = '';
+                    showMessage("เพิ่มช่องทางแล้ว");
+                } catch (err) {
+                    showMessage("เพิ่มช่องทางล้มเหลว", "error");
+                } finally {
+                    btn.disabled = false;
+                }
             }
         }
 
-        function deleteChannel(index) {
+        async function deleteChannel(id) {
             if(confirm("ยืนยันการลบช่องทางนี้?")) {
-                appData.channels.splice(index, 1);
-                saveData();
-                renderChannels();
-                showMessage("ลบสำเร็จ");
+                try {
+                    const { error } = await supabaseClient.from('channels').delete().eq('id', id);
+                    if (error) throw error;
+                    appData.channels = appData.channels.filter(c => c.id !== id);
+                    renderChannels();
+                    showMessage("ลบสำเร็จ");
+                } catch (err) {
+                    showMessage("ลบไม่สำเร็จ", "error");
+                }
             }
         }
 
+        // --- Emails / Customers Management ---
         function populateSelects() {
             const pkgSelect = document.getElementById('form-package');
-            // Populate defaults (will be dynamically appended if editing non-existing data)
-            pkgSelect.innerHTML = appData.packages.map(p => `<option value="${p}">${p}</option>`).join('');
+            pkgSelect.innerHTML = appData.packages.map(p => `<option value="${escapeHTML(p.name)}">${escapeHTML(p.name)}</option>`).join('');
         }
 
-        // Contact Fields Dynamic Management
         function addContactField(channelVal = '', detailVal = '') {
             const container = document.getElementById('contacts-container');
             const row = document.createElement('div');
             row.className = 'flex gap-2 items-start contact-row';
             
-            // Generate options based on available channels
             let options = appData.channels.map(c => 
-                `<option value="${c}" ${c === channelVal ? 'selected' : ''}>${c}</option>`
+                `<option value="${escapeHTML(c.name)}" ${c.name === channelVal ? 'selected' : ''}>${escapeHTML(c.name)}</option>`
             ).join('');
 
-            // ป้องกันข้อมูลหายกรณีที่ช่องทางเก่าถูกลบออกจากระบบไปแล้ว (ให้แสดงเป็นข้อมูลเก่า)
-            if (channelVal && !appData.channels.includes(channelVal)) {
-                 options += `<option value="${channelVal}" selected>${channelVal} (ข้อมูลเก่า)</option>`;
+            // ป้องกันข้อมูลหายกรณีที่ช่องทางเก่าถูกลบ
+            if (channelVal && !appData.channels.some(c => c.name === channelVal)) {
+                 options += `<option value="${escapeHTML(channelVal)}" selected>${escapeHTML(channelVal)} (ข้อมูลเก่า)</option>`;
             } else if (!channelVal && appData.channels.length > 0) {
-                 options = appData.channels.map(c => `<option value="${c}">${c}</option>`).join('');
+                 options = appData.channels.map(c => `<option value="${escapeHTML(c.name)}">${escapeHTML(c.name)}</option>`).join('');
             }
 
             row.innerHTML = `
                 <select class="contact-channel w-1/3 px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand focus:border-brand text-sm bg-white shadow-sm flex-shrink-0 max-w-[120px] md:max-w-none">
                     ${options}
                 </select>
-                <input type="text" class="contact-detail flex-grow px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand focus:border-brand text-sm shadow-sm" placeholder="ชื่อบัญชี / ID / โทรศัพท์" value="${detailVal}" required>
+                <input type="text" class="contact-detail flex-grow px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand focus:border-brand text-sm shadow-sm" placeholder="ชื่อบัญชี / ID / โทรศัพท์" value="${escapeHTML(detailVal)}" required>
                 <button type="button" onclick="removeContactField(this)" class="text-red-500 bg-red-50 hover:bg-red-100 p-2.5 rounded-lg transition border border-red-100 flex-shrink-0 cursor-pointer" title="ลบช่องทางนี้">
                     <i class="fas fa-trash-alt"></i>
                 </button>
@@ -1115,32 +1292,37 @@
         function renderAdminTable() {
             const tbody = document.getElementById('admin-email-table-body');
             tbody.innerHTML = '';
+            
+            if (appData.emails.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center py-6 text-gray-500">ไม่มีข้อมูลลูกค้าในระบบ</td></tr>';
+                return;
+            }
 
-            // Process data for sorting
             let displayData = appData.emails.map(e => ({
                 ...e,
-                daysLeft: calculateDaysLeft(e.expireDate)
+                daysLeft: calculateDaysLeft(e.expire_date)
             }));
 
-            // SORTING: Rule 9 (Sort by days left Ascending)
+            // เรียงข้อมูลวันเหลือน้อยขึ้นก่อน
             displayData.sort((a, b) => a.daysLeft - b.daysLeft);
 
             displayData.forEach((data, index) => {
                 const statusBadge = generateStatusBadge(data.daysLeft, `(${data.daysLeft} วัน)`);
                 
-                // Format Contacts HTML
-                const contactsHTML = data.contacts ? data.contacts.map(c => 
-                    `<div class="mb-1"><span class="font-bold text-gray-700 truncate inline-block align-bottom max-w-[80px]">${c.channel}:</span> <span class="break-all">${c.detail}</span></div>`
-                ).join('') : '-';
+                const contactsHTML = (data.customer_contacts && data.customer_contacts.length > 0) 
+                    ? data.customer_contacts.map(c => 
+                        `<div class="mb-1"><span class="font-bold text-gray-700 truncate inline-block align-bottom max-w-[80px]">${escapeHTML(c.channel_name)}:</span> <span class="break-all">${escapeHTML(c.detail)}</span></div>`
+                      ).join('') 
+                    : '-';
                 
                 const row = `
                     <tr class="hover:bg-gray-50 transition">
                         <td class="py-3 px-4 whitespace-nowrap text-gray-500">${index + 1}</td>
-                        <td class="py-3 px-4 whitespace-nowrap font-medium text-gray-900">${data.id}</td>
-                        <td class="py-3 px-4 whitespace-nowrap text-gray-600 max-w-[150px] truncate" title="${data.package}">${data.package}</td>
-                        <td class="py-3 px-4 whitespace-nowrap text-gray-600">${data.email}</td>
-                        <td class="py-3 px-4 whitespace-nowrap text-gray-500">${data.startDate}</td>
-                        <td class="py-3 px-4 whitespace-nowrap text-gray-500">${data.expireDate}</td>
+                        <td class="py-3 px-4 whitespace-nowrap font-medium text-gray-900">${escapeHTML(data.id)}</td>
+                        <td class="py-3 px-4 whitespace-nowrap text-gray-600 max-w-[150px] truncate" title="${escapeHTML(data.package_name)}">${escapeHTML(data.package_name)}</td>
+                        <td class="py-3 px-4 whitespace-nowrap text-gray-600">${escapeHTML(data.email)}</td>
+                        <td class="py-3 px-4 whitespace-nowrap text-gray-500">${escapeHTML(data.start_date)}</td>
+                        <td class="py-3 px-4 whitespace-nowrap text-gray-500">${escapeHTML(data.expire_date)}</td>
                         <td class="py-3 px-4 whitespace-nowrap">
                             ${statusBadge}
                         </td>
@@ -1148,8 +1330,8 @@
                             ${contactsHTML}
                         </td>
                         <td class="py-3 px-4 whitespace-nowrap text-center text-sm font-medium">
-                            <button onclick="editEmail('${data.id}')" class="text-blue-600 hover:text-blue-900 mr-3 cursor-pointer p-2" title="แก้ไข"><i class="fas fa-edit"></i></button>
-                            <button onclick="deleteEmail('${data.id}')" class="text-red-600 hover:text-red-900 cursor-pointer p-2" title="ลบ"><i class="fas fa-trash-alt"></i></button>
+                            <button onclick="editEmail('${escapeHTML(data.id)}')" class="text-blue-600 hover:text-blue-900 mr-3 cursor-pointer p-2" title="แก้ไข"><i class="fas fa-edit"></i></button>
+                            <button onclick="deleteEmail('${escapeHTML(data.id)}')" class="text-red-600 hover:text-red-900 cursor-pointer p-2" title="ลบ"><i class="fas fa-trash-alt"></i></button>
                         </td>
                     </tr>
                 `;
@@ -1157,25 +1339,27 @@
             });
         }
 
-        function openEmailModal(mode = 'add', data = null) {
+        async function openEmailModal(mode = 'add', data = null) {
+            // โหลดช่องทางและแพ็คเกจให้ครบก่อนเปิด (กรณีเพิ่งล็อกอินเข้ามา)
+            if (appData.packages.length === 0) await fetchPackages();
+            if (appData.channels.length === 0) await fetchChannels();
+
             populateSelects();
             document.getElementById('form-mode').value = mode;
             document.getElementById('email-form').reset();
             const contactsContainer = document.getElementById('contacts-container');
-            contactsContainer.innerHTML = ''; // Clear contact fields
+            contactsContainer.innerHTML = ''; 
             
             if (mode === 'add') {
                 document.getElementById('modal-title').innerText = "เพิ่มข้อมูลเมลลูกค้า";
                 document.getElementById('form-code').value = generateNextId();
-                // Default dates
+                
                 const today = new Date().toISOString().split('T')[0];
                 document.getElementById('form-start-date').value = today;
-                
                 let nextMonth = new Date();
                 nextMonth.setMonth(nextMonth.getMonth() + 1);
                 document.getElementById('form-expire-date').value = nextMonth.toISOString().split('T')[0];
                 
-                // Add first empty contact row
                 addContactField();
 
             } else if (mode === 'edit' && data) {
@@ -1186,18 +1370,16 @@
                 document.getElementById('form-code').value = data.id;
                 
                 const pkgSelect = document.getElementById('form-package');
-                // ป้องกันข้อมูลหาย หากแพ็คเกจเก่าไม่มีในระบบแล้ว
-                if (data.package && !appData.packages.includes(data.package)) {
-                    pkgSelect.innerHTML += `<option value="${data.package}">${data.package} (ข้อมูลเก่า)</option>`;
+                if (data.package_name && !appData.packages.some(p => p.name === data.package_name)) {
+                    pkgSelect.innerHTML += `<option value="${escapeHTML(data.package_name)}">${escapeHTML(data.package_name)} (ข้อมูลเก่า)</option>`;
                 }
-                pkgSelect.value = data.package;
+                pkgSelect.value = data.package_name;
                 
-                document.getElementById('form-start-date').value = data.startDate;
-                document.getElementById('form-expire-date').value = data.expireDate;
+                document.getElementById('form-start-date').value = data.start_date;
+                document.getElementById('form-expire-date').value = data.expire_date;
 
-                // Render contact rows based on saved data
-                if(data.contacts && data.contacts.length > 0) {
-                    data.contacts.forEach(c => addContactField(c.channel, c.detail));
+                if(data.customer_contacts && data.customer_contacts.length > 0) {
+                    data.customer_contacts.forEach(c => addContactField(c.channel_name, c.detail));
                 } else {
                     addContactField();
                 }
@@ -1212,50 +1394,68 @@
             document.body.classList.remove('modal-active');
         }
 
-        function saveEmailData() {
+        async function saveEmailData() {
+            const btn = document.getElementById('btn-save-email');
             const mode = document.getElementById('form-mode').value;
-            const id = document.getElementById('form-code').value; // is readonly, acts as ID
+            const id = document.getElementById('form-code').value; 
             
-            // Gather all contacts from dynamic rows
             const contactRows = document.querySelectorAll('.contact-row');
             let contactsList = [];
             contactRows.forEach(row => {
                 const channelVal = row.querySelector('.contact-channel').value;
                 const detailVal = row.querySelector('.contact-detail').value.trim();
                 if(detailVal) {
-                    contactsList.push({ channel: channelVal, detail: detailVal });
+                    contactsList.push({ customer_id: id, channel_name: channelVal, detail: detailVal });
                 }
             });
 
             if (contactsList.length === 0) {
                 showMessage("กรุณาระบุรายละเอียดช่องทางการติดต่อ", "error");
-                return; // Prevent save if no valid contacts
+                return;
             }
 
-            const newData = {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> กำลังบันทึก...';
+
+            const emailPayload = {
                 id: id,
-                contacts: contactsList,
                 email: document.getElementById('form-email').value,
-                package: document.getElementById('form-package').value,
-                startDate: document.getElementById('form-start-date').value,
-                expireDate: document.getElementById('form-expire-date').value
+                package_name: document.getElementById('form-package').value,
+                start_date: document.getElementById('form-start-date').value,
+                expire_date: document.getElementById('form-expire-date').value
             };
 
-            if (mode === 'add') {
-                appData.emails.push(newData);
-                showMessage("เพิ่มข้อมูลสำเร็จ");
-            } else {
-                const index = appData.emails.findIndex(e => e.id === id);
-                if(index !== -1) {
-                    appData.emails[index] = newData;
-                    showMessage("อัปเดตข้อมูลสำเร็จ");
-                }
-            }
+            try {
+                // Upsert customer
+                const { error: customerError } = await supabaseClient.from('customers').upsert(emailPayload);
+                if (customerError) throw customerError;
 
-            saveData();
-            renderAdminTable();
-            updateDashboardStats();
-            closeEmailModal();
+                // Rewrite contacts (delete old, insert new)
+                await supabaseClient.from('customer_contacts').delete().eq('customer_id', id);
+                const { error: contactsError } = await supabaseClient.from('customer_contacts').insert(contactsList);
+                if (contactsError) throw contactsError;
+
+                // Sync local memory and UI
+                if (mode === 'add') {
+                    appData.emails.push({ ...emailPayload, customer_contacts: contactsList });
+                    showMessage("เพิ่มข้อมูลสำเร็จ");
+                } else {
+                    const index = appData.emails.findIndex(e => e.id === id);
+                    if(index !== -1) {
+                        appData.emails[index] = { ...emailPayload, customer_contacts: contactsList };
+                        showMessage("อัปเดตข้อมูลสำเร็จ");
+                    }
+                }
+
+                renderAdminTable();
+                updateDashboardStats();
+                closeEmailModal();
+            } catch (err) {
+                showMessage("เกิดข้อผิดพลาด: " + err.message, "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'บันทึกข้อมูล';
+            }
         }
 
         function editEmail(id) {
@@ -1263,21 +1463,21 @@
             if(data) openEmailModal('edit', data);
         }
 
-        function deleteEmail(id) {
+        async function deleteEmail(id) {
             if(confirm("ยืนยันการลบข้อมูลนี้? การกระทำนี้ไม่สามารถกู้คืนได้")) {
-                appData.emails = appData.emails.filter(e => e.id !== id);
-                saveData();
-                renderAdminTable();
-                updateDashboardStats();
-                showMessage("ลบข้อมูลสำเร็จ");
+                try {
+                    const { error } = await supabaseClient.from('customers').delete().eq('id', id);
+                    if (error) throw error;
+                    
+                    appData.emails = appData.emails.filter(e => e.id !== id);
+                    renderAdminTable();
+                    updateDashboardStats();
+                    showMessage("ลบข้อมูลสำเร็จ");
+                } catch (err) {
+                    showMessage("ลบข้อมูลไม่สำเร็จ: " + err.message, "error");
+                }
             }
         }
-
-        // --- App Boot ---
-        window.onload = function() {
-            loadData();
-        };
-
     </script>
 </body>
 </html>
