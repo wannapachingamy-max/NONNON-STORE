@@ -290,7 +290,7 @@
                     <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-blue-500">
                         <div class="flex justify-between items-center">
                             <div>
-                                <p class="text-sm text-gray-500 uppercase tracking-wide font-semibold">เมลทั้งหมด</p>
+                                <p class="text-sm text-gray-500 uppercase tracking-wide font-semibold">เมลทั้งหมด (ใช้งานอยู่)</p>
                                 <h3 class="text-3xl font-bold text-gray-800 mt-1" id="stat-total">...</h3>
                             </div>
                             <div class="p-3 bg-blue-100 rounded-full text-blue-600">
@@ -339,10 +339,15 @@
 
             <div id="tab-emails" class="admin-tab-content hidden space-y-6">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <h2 class="text-2xl font-bold text-gray-800">จัดการข้อมูลเมลลูกค้า</h2>
-                    <button onclick="openEmailModal()" class="bg-brand text-white px-4 py-2 rounded-lg shadow hover:opacity-90 transition">
-                        <i class="fas fa-plus mr-2"></i> เพิ่มข้อมูลเมล
-                    </button>
+                    <h2 class="text-2xl font-bold text-gray-800" id="table-title">จัดการข้อมูลเมลลูกค้า</h2>
+                    <div class="flex gap-2 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0">
+                        <button onclick="toggleArchiveView()" id="btn-toggle-archive" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg shadow hover:bg-gray-300 transition flex-grow sm:flex-grow-0 whitespace-nowrap text-sm md:text-base">
+                            <i class="fas fa-archive mr-2"></i> ที่จัดเก็บแล้ว
+                        </button>
+                        <button onclick="openEmailModal()" class="bg-brand text-white px-4 py-2 rounded-lg shadow hover:opacity-90 transition flex-grow sm:flex-grow-0 whitespace-nowrap text-sm md:text-base">
+                            <i class="fas fa-plus mr-2"></i> เพิ่มข้อมูล
+                        </button>
+                    </div>
                 </div>
 
                 <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
@@ -540,10 +545,12 @@
                 logoDataUrl: "",
                 bgDataUrl: ""
             },
-            packages: [], // Array of objects {id, name}
-            channels: [], // Array of objects {id, name}
-            emails: []    // Loaded from DB for dashboard
+            packages: [], 
+            channels: [], 
+            emails: []    
         };
+
+        let currentViewArchived = false; // ตัวแปรคุมสถานะการดูข้อมูลที่จัดเก็บ
 
         // --- Escaper for Security (XSS Protection) ---
         function escapeHTML(str) {
@@ -568,7 +575,6 @@
             if (session) {
                 const isAdmin = await verifyAdminStatus();
                 if (isAdmin) {
-                    // Populate email form for admin update
                     document.getElementById('setting-admin-email').value = session.user.email;
                 } else {
                     await supabaseClient.auth.signOut();
@@ -711,7 +717,6 @@
             }
 
             if (viewId === 'view-admin-login') {
-                // Skip login if already logged in as admin
                 supabaseClient.auth.getSession().then(async ({ data: { session } }) => {
                     if (session && await verifyAdminStatus()) {
                         switchView('view-admin-dashboard');
@@ -727,7 +732,6 @@
             document.getElementById(viewId).classList.add('active');
         }
 
-        // --- Image Compression (Canvas to WebP base64) ---
         function compressImage(file, callback) {
             const reader = new FileReader();
             reader.onload = function(event) {
@@ -917,13 +921,15 @@
             btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> กำลังค้นหา...';
             
             try {
-                // Search ignoring case on id or email
-                const { data: matches, error } = await supabaseClient
+                const { data: matchesRaw, error } = await supabaseClient
                     .from('customers')
                     .select('*, customer_contacts(*)')
                     .or(`id.ilike.%${query}%,email.ilike.%${query}%`);
 
                 if (error) throw error;
+
+                // กรองข้อมูลที่ถูกจัดเก็บแล้วออกจากการค้นหา
+                const matches = matchesRaw.filter(e => !e.is_archived);
 
                 tbody.innerHTML = '';
                 
@@ -1079,6 +1085,48 @@
             }
         }
 
+        // Archive Toggle function
+        function toggleArchiveView() {
+            currentViewArchived = !currentViewArchived;
+            const btn = document.getElementById('btn-toggle-archive');
+            const title = document.getElementById('table-title');
+            
+            if (currentViewArchived) {
+                btn.innerHTML = '<i class="fas fa-arrow-left mr-2"></i> กลับไปหน้าปกติ';
+                btn.classList.replace('bg-gray-200', 'bg-brand');
+                btn.classList.replace('text-gray-700', 'text-white');
+                title.innerHTML = 'ข้อมูลเมลลูกค้า <span class="text-gray-500 text-lg ml-2">(ที่จัดเก็บแล้ว)</span>';
+            } else {
+                btn.innerHTML = '<i class="fas fa-archive mr-2"></i> ที่จัดเก็บแล้ว';
+                btn.classList.replace('bg-brand', 'bg-gray-200');
+                btn.classList.replace('text-white', 'text-gray-700');
+                title.innerHTML = 'จัดการข้อมูลเมลลูกค้า';
+            }
+            renderAdminTable();
+        }
+
+        async function toggleArchiveStatus(id, newStatus) {
+            const actionText = newStatus ? "จัดเก็บ" : "ดึงกลับมาใช้งาน";
+            if(confirm(`ยืนยันการ${actionText}ข้อมูลนี้?`)) {
+                try {
+                    const { error } = await supabaseClient.from('customers').update({ is_archived: newStatus }).eq('id', id);
+                    if (error) throw error;
+                    
+                    const index = appData.emails.findIndex(e => e.id === id);
+                    if(index !== -1) {
+                        appData.emails[index].is_archived = newStatus;
+                    }
+                    
+                    renderAdminTable();
+                    updateDashboardStats();
+                    showMessage(`${actionText}สำเร็จ`);
+                } catch (err) {
+                    showMessage(`${actionText}ไม่สำเร็จ: โปรดตรวจสอบว่ามีคอลัมน์ is_archived ในตารางหรือไม่`, "error");
+                    console.error(err);
+                }
+            }
+        }
+
         async function fetchAllCustomers() {
             try {
                 const { data, error } = await supabaseClient.from('customers').select('*, customer_contacts(*)');
@@ -1102,10 +1150,13 @@
         }
 
         function updateDashboardStats() {
-            const total = appData.emails.length;
-            let active = 0, warning = 0, expired = 0;
+            let active = 0, warning = 0, expired = 0, total = 0;
 
             appData.emails.forEach(e => {
+                // ข้ามข้อมูลที่จัดเก็บแล้ว ไม่นำมานับรวม
+                if(e.is_archived) return;
+
+                total++;
                 const days = calculateDaysLeft(e.expire_date);
                 if (days < 0) expired++;
                 else if (days <= 3) warning++;
@@ -1293,15 +1344,18 @@
             const tbody = document.getElementById('admin-email-table-body');
             tbody.innerHTML = '';
             
-            if (appData.emails.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" class="text-center py-6 text-gray-500">ไม่มีข้อมูลลูกค้าในระบบ</td></tr>';
+            // กรองข้อมูลตามโหมดว่าดูกล่องปกติ หรือ ดูของที่จัดเก็บแล้ว
+            let displayData = appData.emails
+                .filter(e => currentViewArchived ? e.is_archived : !e.is_archived)
+                .map(e => ({
+                    ...e,
+                    daysLeft: calculateDaysLeft(e.expire_date)
+                }));
+
+            if (displayData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-gray-500">ไม่มีข้อมูลลูกค้าใน${currentViewArchived ? 'ที่จัดเก็บ' : 'ระบบ'}</td></tr>`;
                 return;
             }
-
-            let displayData = appData.emails.map(e => ({
-                ...e,
-                daysLeft: calculateDaysLeft(e.expire_date)
-            }));
 
             // เรียงข้อมูลวันเหลือน้อยขึ้นก่อน
             displayData.sort((a, b) => a.daysLeft - b.daysLeft);
@@ -1315,6 +1369,11 @@
                       ).join('') 
                     : '-';
                 
+                // ปุ่ม Archive / Unarchive
+                const archiveBtnHTML = currentViewArchived 
+                    ? `<button onclick="toggleArchiveStatus('${escapeHTML(data.id)}', false)" class="text-green-600 hover:text-green-900 mr-2 cursor-pointer p-2" title="ดึงกลับมาใช้งาน"><i class="fas fa-box-open"></i></button>`
+                    : `<button onclick="toggleArchiveStatus('${escapeHTML(data.id)}', true)" class="text-yellow-600 hover:text-yellow-900 mr-2 cursor-pointer p-2" title="จัดเก็บข้อมูล"><i class="fas fa-archive"></i></button>`;
+
                 const row = `
                     <tr class="hover:bg-gray-50 transition">
                         <td class="py-3 px-4 whitespace-nowrap text-gray-500">${index + 1}</td>
@@ -1330,7 +1389,8 @@
                             ${contactsHTML}
                         </td>
                         <td class="py-3 px-4 whitespace-nowrap text-center text-sm font-medium">
-                            <button onclick="editEmail('${escapeHTML(data.id)}')" class="text-blue-600 hover:text-blue-900 mr-3 cursor-pointer p-2" title="แก้ไข"><i class="fas fa-edit"></i></button>
+                            <button onclick="editEmail('${escapeHTML(data.id)}')" class="text-blue-600 hover:text-blue-900 mr-2 cursor-pointer p-2" title="แก้ไข"><i class="fas fa-edit"></i></button>
+                            ${archiveBtnHTML}
                             <button onclick="deleteEmail('${escapeHTML(data.id)}')" class="text-red-600 hover:text-red-900 cursor-pointer p-2" title="ลบ"><i class="fas fa-trash-alt"></i></button>
                         </td>
                     </tr>
@@ -1398,7 +1458,20 @@
             const btn = document.getElementById('btn-save-email');
             const mode = document.getElementById('form-mode').value;
             const id = document.getElementById('form-code').value; 
+            const inputEmail = document.getElementById('form-email').value.trim().toLowerCase();
             
+            // เช็คว่ามีอีเมลนี้ในระบบที่ยัง "ไม่ถูกจัดเก็บ" หรือไม่
+            const isDuplicate = appData.emails.some(e => 
+                e.email.toLowerCase() === inputEmail && 
+                e.id !== id && 
+                !e.is_archived
+            );
+
+            if (isDuplicate) {
+                showMessage("อีเมลนี้กำลังใช้งานอยู่หรือมีในระบบแล้ว (ยังไม่ได้จัดเก็บ) ไม่สามารถเพิ่มซ้ำได้", "error");
+                return;
+            }
+
             const contactRows = document.querySelectorAll('.contact-row');
             let contactsList = [];
             contactRows.forEach(row => {
@@ -1426,23 +1499,21 @@
             };
 
             try {
-                // Upsert customer
                 const { error: customerError } = await supabaseClient.from('customers').upsert(emailPayload);
                 if (customerError) throw customerError;
 
-                // Rewrite contacts (delete old, insert new)
                 await supabaseClient.from('customer_contacts').delete().eq('customer_id', id);
                 const { error: contactsError } = await supabaseClient.from('customer_contacts').insert(contactsList);
                 if (contactsError) throw contactsError;
 
-                // Sync local memory and UI
                 if (mode === 'add') {
-                    appData.emails.push({ ...emailPayload, customer_contacts: contactsList });
+                    appData.emails.push({ ...emailPayload, customer_contacts: contactsList, is_archived: false });
                     showMessage("เพิ่มข้อมูลสำเร็จ");
                 } else {
                     const index = appData.emails.findIndex(e => e.id === id);
                     if(index !== -1) {
-                        appData.emails[index] = { ...emailPayload, customer_contacts: contactsList };
+                        const previousArchiveStatus = appData.emails[index].is_archived;
+                        appData.emails[index] = { ...emailPayload, customer_contacts: contactsList, is_archived: previousArchiveStatus };
                         showMessage("อัปเดตข้อมูลสำเร็จ");
                     }
                 }
@@ -1451,7 +1522,8 @@
                 updateDashboardStats();
                 closeEmailModal();
             } catch (err) {
-                showMessage("เกิดข้อผิดพลาด: " + err.message, "error");
+                showMessage("เกิดข้อผิดพลาด: โปรดตรวจสอบว่ามีคอลัมน์ is_archived หรือไม่", "error");
+                console.error(err);
             } finally {
                 btn.disabled = false;
                 btn.innerText = 'บันทึกข้อมูล';
